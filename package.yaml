@@ -31,7 +31,9 @@ dependencies:
 
 
 library:
-  source-dirs: src
+  source-dirs: 
+    - src
+    - test
   default-extensions:
   - ScopedTypeVariables
   - TypeApplications

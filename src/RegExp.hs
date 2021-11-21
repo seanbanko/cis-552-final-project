@@ -1,4 +1,3 @@
--- Rahul Chandran, Zeyu Zhao
 {-
 Regular Expressions
 ===================
@@ -21,9 +20,9 @@ import qualified Control.Monad as Monad
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 -- Haskell's standard implementation of Finite Sets.
-
 import Data.Set (Set)
 import qualified Data.Set as Set
+-- Testing
 import Test.HUnit hiding (State)
 import Test.QuickCheck
 
@@ -205,6 +204,7 @@ above.
 
 -- >>> display boldHtml
 -- "<b>(.+)</b>"
+
 {-
 RegExp Acceptance
 -----------------
@@ -222,7 +222,8 @@ implementations.)
 -- >>> -- split "abc"
 -- [("","abc"),("a","bc"),("ab","c"),("abc","")]
 split :: [a] -> [([a], [a])]
-split l = [splitAt x l | x <- [0 .. length l]]
+split [] = [([], [])]
+split (x : xs) = ([], x : xs) : [(x : p1, p2) | (p1, p2) <- split xs]
 
 -- | all decompositions of a string into multi-part (nonempty) pieces
 --
@@ -247,7 +248,7 @@ You can do better, though!
 
 -- Add a QuickCheck property for split
 prop_split :: [Int] -> Bool
-prop_split l = all (\(x, y) -> x ++ y == l) (split l) && length (Set.fromList (split l)) == length l + 1
+prop_split l = all (\(x, y) -> x ++ y == l) (split l)
 
 {-
 Note: we have to be careful when randomly testing parts; this is an
@@ -283,16 +284,13 @@ your implementation.
 
 -- | Decide whether the given regexp matches the given string
 accept :: RegExp -> String -> Bool
-accept (Char set) [char] = Set.member char set
-accept (Char _) _ = False
-accept (Alt a1 a2) s = accept a1 s || accept a2 s
-accept (Append p1 p2) s = or [bothAccept x | x <- split s]
-  where
-    bothAccept (s1, s2) = accept p1 s1 && accept p2 s2
-accept (Star repeat) s = null s || or [isRepeat x | x <- parts s]
-  where
-    isRepeat strs = and [accept repeat s | s <- strs]
-accept Empty s = null s
+accept (Char cset) s = case s of
+  [c] -> Set.member c cset
+  _ -> False
+accept (r1 `Alt` r2) s = accept r1 s || accept r2 s
+accept (r1 `Append` r2) s = any (\(x, y) -> accept r1 x && accept r2 y) (split s)
+accept (Star r) s = any (all (accept r)) (parts s)
+accept Empty s = s == ""
 accept Void _ = False
 
 testAccept :: Test
@@ -354,7 +352,6 @@ strings accepted by the RegExps. Instead, put a bound on the number of
 iterations in your result. In particular, iterating more than twice could
 cause a large blow-up when quickChecking `prop_accept`.
 -}
-issue = Alt Empty Void
 
 -- | Create a generator for the strings accepted by this RegExp (if any)
 genRegExpString :: RegExp -> Maybe (Gen String)
@@ -389,10 +386,10 @@ defaultCharSet = Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c', 'd']))
 instance Arbitrary RegExp where
   arbitrary =
     oneof
-      [ Char <$> elements defaultCharSet,
-        Alt <$> arbitrary <*> arbitrary,
-        Append <$> arbitrary <*> arbitrary,
-        Star <$> arbitrary,
+      [ fmap Char (elements defaultCharSet),
+        Monad.liftM2 Alt arbitrary arbitrary,
+        Monad.liftM2 Append arbitrary arbitrary,
+        fmap Star arbitrary,
         return Empty,
         return Void
       ]
@@ -468,9 +465,9 @@ isEmpty :: RegExp -> Bool
 isEmpty Empty = True
 isEmpty (Append r1 r2) = isEmpty r1 && isEmpty r2
 isEmpty (Alt r1 r2) =
-  isEmpty r1 && isEmpty r2
-    || isEmpty r1 && isVoid r2
-    || isEmpty r2 && isVoid r1
+  (isEmpty r1 && isEmpty r2)
+    || (isEmpty r1 && isVoid r2)
+    || (isEmpty r2 && isVoid r1)
 isEmpty (Star r) = isEmpty r || isVoid r
 isEmpty (Char _) = False
 isEmpty Void = False
@@ -522,10 +519,12 @@ Algebra](https://en.wikipedia.org/wiki/Kleene_algebra).)
 
 -- | Smart constructor for `Append`
 append :: RegExp -> RegExp -> RegExp
-re1 `append` re2 | isEmpty re1 = re2
-re1 `append` re2 | isEmpty re2 = re1
-re1 `append` re2 | isVoid re1 || isVoid re2 = Void
-re1 `append` re2 = Append re1 re2
+append r1 r2 | isEmpty r1 && isEmpty r2 = Empty
+append r1 r2 | isEmpty r1 = r2
+append r1 r2 | isEmpty r2 = r1
+append r1 r2 | isVoid r1 = Void
+append r1 r2 | isVoid r2 = Void
+append r1 r2 = r1 `Append` r2
 
 prop_append :: RegExp -> RegExp -> Property
 prop_append r1 r2 = rs /= Append r1 r2 ==> rs %==% Append r1 r2
@@ -592,23 +591,17 @@ implementation.
 
 -- | `nullable r` return `True` when `r` could match the empty string
 nullable :: RegExp -> Bool
+nullable (Char cset) = False
+nullable (r1 `Alt` r2) = nullable r1 || nullable r2
+nullable (r1 `Append` r2) = nullable r1 && nullable r2
+nullable (Star r) = True
 nullable Empty = True
 nullable Void = False
-nullable (Char s) = False
-nullable (Star _) = True
-nullable (Append re1 re2) = nullable re1 && nullable re2
-nullable (Alt re1 re2) = nullable re1 || nullable re2
 
 -- |  Takes a regular expression `r` and a character `c`,
 -- and computes a new regular expression that accepts word `w`
 -- if `cw` is accepted by `r`. Make sure to use the smart constructors
 -- above when you construct the new `RegExp`
-smart :: RegExp -> RegExp
-smart (Star re) = star re
-smart (Append re1 re2) = append re1 re2
-smart (Alt re1 re2) = alt re1 re2
-smart other = other
-
 deriv :: RegExp -> Char -> RegExp
 deriv (Char cset) c = if Set.member c cset then Empty else Void
 deriv (r1 `Alt` r2) c = deriv r1 c `alt` deriv r2 c
@@ -638,40 +631,6 @@ regular expression. The expression has only to be evaluated as much as
 -- Don't forget to test 'match' with HUnit and QuickCheck.
 
 -------------------------------------------------
-beginEndWithX = string "x" `Append` plus (Char anyc) `Append` string "x"
-
-starXY = Star (Char anyc) `Append` Char (Set.fromList "x") `Append` Char (Set.fromList "y")
-
--- star
-plusRE = plus (Char anyc)
-
-xyRE = Char (Set.fromList "x") `Append` Char (Set.fromList "y")
-
-appendEndWithXY = plus (Char anyc) `Append` string "xy"
-
-testMatch :: Test
-testMatch =
-  "match"
-    ~: TestList
-      [ not (match Void "a") ~? "nothing is void",
-        not (match Void "") ~? "really, nothing is void",
-        match Empty "" ~? "accept Empty true",
-        not (match Empty "a") ~? "not accept Empty",
-        match (Char lower) "a" ~? "accept lower",
-        not (match (Char lower) "A") ~? "not accept lower",
-        match xyRE "xy" ~? "1",
-        not (match xyRE "xyz") ~? "3",
-        not (match xyRE "axy") ~? "2",
-        match boldHtml "<b>cis552</b>!</b>" ~? "cis552!",
-        -- failing ones
-        not (match starXY "x") ~? "old ailed case",
-        not (match starXY "ax") ~? "old failed case 2",
-        not (match xyRE "x") ~? "not long enough",
-        match starXY "-xy" ~? "correct",
-        not (match appendEndWithXY "----x") ~? "append ends with xy",
-        not (match boldHtml "<b>cis552</b>!</b") ~? "not enough tail",
-        not (match beginEndWithX "xaxy") ~? "too much trailing"
-      ]
 
 prop_match :: Property
 prop_match = forAllShrinkShow arbitrary shrink display $ \r ->
@@ -681,6 +640,20 @@ prop_match = forAllShrinkShow arbitrary shrink display $ \r ->
     -- then it should be accepted
     Nothing -> property $ isVoid r -- otherwise, we should have a RegExp
     -- equivalent to 'Void'
+
+testMatch :: Test
+testMatch =
+  "match"
+    ~: TestList
+      [ not (match Void "a") ~? "nothing is void",
+        not (match Void "") ~? "really, nothing is void",
+        match Empty "" ~? "match Empty true",
+        not (match Empty "a") ~? "not match Empty",
+        match (Char lower) "a" ~? "match lower",
+        not (match (Char lower) "A") ~? "not match lower",
+        match boldHtml "<b>cis552</b>!</b>" ~? "cis552!",
+        not (match boldHtml "<b>cis552</b>!</b") ~? "no trailing"
+      ]
 
 {-
 Running the Tests

@@ -2,6 +2,8 @@ module Generators where
 
 import NFA
 import Test.QuickCheck
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 {-
 Thoughts on how to generate an arbitrary NFA:
@@ -16,6 +18,10 @@ instance Arbitrary NFA where
 -- instance arbitrary DFA where
 --     arbitrary :: Gen DFA
 --     arbitrary = toDFA <$> (arbitrary :: Gen NFA)
+
+
+genNFAString :: NFA -> Gen String 
+genNFAString nfa = listOf (elements (Set.toList (alphabet nfa))) 
 
 {-
 -- Generator for strings accepted by this NFA (if any)

@@ -13,8 +13,9 @@ type DFA = Map State (Map Char State) -- should we create a new type for DFA's?
 
 type State = Int
 -- type Symbol = Char
-data NFA = N {alphabet :: Set Char, states :: Set State, adjacencyList :: Map State (Map Char (Set State)) , start :: State, acceptStates :: Set State} deriving (Eq, Show)
--- data DFA = D {alphabet :: Set Char, states :: Set State, adjacencyList :: Map State (Map Char (Set State)) , start :: State, accept :: Set State}
+-- Should the adjacentList be a map or a function with type State -> Char -> Set State?
+data NFA = N {states :: Set State, alphabet :: Set Char,  adjacencyList :: Map State (Map Char (Set State)) , start :: State, acceptStates :: Set State} deriving (Eq, Show)
+-- data DFA = D {states :: Set State, alphabet :: Set Char, adjacencyList :: Map State (Map Char State) , start :: State, accept :: Set State}
 
 
 -- Returns the set of states reachable from state s upon reading symbol sigma in NFA n

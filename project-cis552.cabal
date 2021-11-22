@@ -33,6 +33,7 @@ library
       RegExp
       DFAMinimizationTests
       Generators
+      NFADFAConvTests
       NFARegexConvTests
       Spec
   other-modules:
@@ -104,6 +105,7 @@ test-suite project-cis552-test
   other-modules:
       DFAMinimizationTests
       Generators
+      NFADFAConvTests
       NFARegexConvTests
       Paths_project_cis552
   hs-source-dirs:

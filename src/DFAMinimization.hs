@@ -1,8 +1,8 @@
-module DFAMinimization where 
+module DFAMinimization where
 
-import NFA
+import FA
 
-minimizeDFA :: NFA -> NFA  
+minimizeDFA :: DFA a -> DFA a
 minimizeDFA = undefined
 
--- there will be many helper functions 
+-- there will be many helper functions

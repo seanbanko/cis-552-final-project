@@ -1,22 +1,24 @@
 module NFADFAConv where
 
-import NFA 
+import Data.Set (Set)
+import qualified Data.Set as Set
+import FA
 
 -- we will incremently convert the NFA to a DFA. The alphabet will never be changed.
 
-changeStates :: NFA -> NFA 
-changeStates = undefined 
+changeStates :: Set a -> Set (a, a)
+changeStates = undefined
 
-changeTransitions :: NFA -> NFA 
-changeTransitions = undefined 
+changeTransitions :: NFA a -> NFA a
+changeTransitions = undefined
 
-changeStartState :: NFA -> NFA 
-changeStartState = undefined 
+changeStartState :: NFA a -> NFA a
+changeStartState = undefined
 
-changeAcceptStates :: NFA -> NFA 
-changeAcceptStates = undefined 
+changeAcceptStates :: NFA a -> NFA a
+changeAcceptStates = undefined
 
-toDFA ::  NFA -> NFA
-toDFA nfa = changeAcceptStates (changeStartState (changeTransitions (changeStates nfa)))
+toDFA :: NFA a -> DFA a
+toDFA nfa = undefined
 
 -- there will be many helper functions

@@ -1,11 +1,10 @@
-module NFARegexConv where 
+module NFARegexConv where
 
-import NFA
+import FA
 import RegExp
 
-toRegExp :: NFA -> RegExp
-toRegExp = undefined 
+toRegExp :: NFA a -> RegExp
+toRegExp = undefined
 
-toNFA :: RegExp -> NFA
+toNFA :: RegExp -> NFA a
 toNFA = undefined
-

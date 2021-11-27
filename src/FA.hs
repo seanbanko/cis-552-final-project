@@ -1,6 +1,5 @@
 module FA where
 
-import qualified Control.Applicative as S
 import qualified Data.List as List
 import Data.Map (Map, (!), (!?))
 import qualified Data.Map as Map
@@ -30,15 +29,11 @@ findNeighborsN :: Ord a => NFA a -> a -> Symbol -> Set a
 findNeighborsN nfa state symbol = (transitionMap nfa ! state) ! symbol
 
 findEpsilonStates :: Ord a => NFA a -> Set a -> [a] -> Set a
-findEpsilonStates nfa visited queue@[] = visited
-findEpsilonStates nfa visited queue@(q : qs) =
+findEpsilonStates nfa visited [] = visited
+findEpsilonStates nfa visited (q : qs) =
   let neighbors = findNeighborsN nfa q Epsilon
-   in case Set.toList neighbors of
-        [] -> findEpsilonStates nfa visited qs
-        n : ns ->
-          if Set.member n visited
-            then findEpsilonStates nfa visited qs
-            else findEpsilonStates nfa (Set.insert n visited) (qs ++ [n])
+      unvisitedNeighbors = Set.filter (`Set.notMember` visited) neighbors
+   in findEpsilonStates nfa (visited <> unvisitedNeighbors) (qs ++ Set.toList unvisitedNeighbors)
 
 transitionEpsilon :: Ord a => NFA a -> a -> Set a
 transitionEpsilon nfa state = findEpsilonStates nfa (Set.singleton state) [state]
@@ -64,24 +59,63 @@ stringTransitionN nfa state (x : xs) = go (transitionN nfa state x) xs
 
 -- Returns true iff the NFA accepts the string
 acceptN :: Ord a => NFA a -> String -> Bool
-acceptN nfa xs = Set.intersection (stringTransitionN nfa (startState nfa) xs) (acceptStates nfa) /= Set.empty
+acceptN nfa s = Set.intersection (stringTransitionN nfa (startState nfa) s) (acceptStates nfa) /= Set.empty
 
-transitionD :: Ord a => DFA a -> a -> Char -> Maybe a
-transitionD dfa state char = do
-  neighbors <- transitionMap dfa !? state
-  neighbors !? char
+transitionD :: Ord a => DFA a -> a -> Char -> a
+transitionD dfa state char = (transitionMap dfa ! state) ! char
 
-stringTransitionD :: Ord a => DFA a -> a -> String -> Maybe a
-stringTransitionD dfa state [] = return state
-stringTransitionD dfa state (x : xs) = do
-  nextState <- transitionD dfa state x
-  stringTransitionD dfa nextState xs
+stringTransitionD :: Ord a => DFA a -> a -> String -> a
+stringTransitionD dfa state [] = state
+stringTransitionD dfa state (x : xs) =
+  let nextState = transitionD dfa state x
+   in stringTransitionD dfa nextState xs
 
 -- Returns true iff the DFA accepts the string
-acceptD :: Ord a => DFA a -> String -> Maybe Bool
-acceptD dfa xs = do
-  endState <- stringTransitionD dfa (startState dfa) xs
-  return $ Set.member endState (acceptStates dfa)
+acceptD :: Ord a => DFA a -> String -> Bool
+acceptD dfa s =
+  let endState = stringTransitionD dfa (startState dfa) s
+   in Set.member endState (acceptStates dfa)
+
+bfsD :: Ord a => DFA a -> Set a -> [a] -> Set a
+bfsD dfa visited [] = visited
+bfsD dfa visited (q : qs) =
+  let neighbors = Set.foldr (\x y -> Set.singleton (transitionD dfa q x) <> y) Set.empty (alphabet dfa)
+      unvisitedNeighbors = Set.filter (`Set.notMember` visited) neighbors
+   in bfsD dfa (visited <> unvisitedNeighbors) (qs ++ Set.toList unvisitedNeighbors)
+
+findReachableStatesD :: Ord a => DFA a -> Set a
+findReachableStatesD dfa = bfsD dfa (Set.singleton (startState dfa)) [startState dfa]
+
+removeUnreachableStatesD :: Ord a => DFA a -> DFA a
+removeUnreachableStatesD dfa =
+  let rs = findReachableStatesD dfa
+      s = Set.intersection rs (states dfa)
+      a = alphabet dfa
+      tm = Map.filterWithKey (\k _ -> Set.member k rs) (transitionMap dfa)
+      ss = startState dfa
+      as = Set.intersection (acceptStates dfa) rs
+   in F s a tm ss as
+
+bfsN :: Ord a => NFA a -> Set a -> [a] -> Set a
+bfsN nfa visited [] = visited
+bfsN nfa visited (q : qs) =
+  let symbols = Set.insert Epsilon (Set.map Char (alphabet nfa))
+      neighbors = Set.foldr (\x y -> findNeighborsN nfa q x <> y) Set.empty symbols
+      unvisitedNeighbors = Set.filter (`Set.notMember` visited) neighbors
+   in findEpsilonStates nfa (visited <> unvisitedNeighbors) (qs ++ Set.toList unvisitedNeighbors)
+
+findReachableStatesN :: Ord a => NFA a -> Set a
+findReachableStatesN nfa = bfsN nfa (Set.singleton (startState nfa)) [startState nfa]
+
+removeUnreachableStatesN :: Ord a => NFA a -> NFA a
+removeUnreachableStatesN nfa =
+  let rs = findReachableStatesN nfa
+      s = Set.intersection rs (states nfa)
+      a = alphabet nfa
+      tm = Map.filterWithKey (\k _ -> Set.member k rs) (transitionMap nfa)
+      ss = startState nfa
+      as = Set.intersection (acceptStates nfa) rs
+   in F s a tm ss as
 
 isDFA :: DFA a -> Bool
 isDFA = undefined

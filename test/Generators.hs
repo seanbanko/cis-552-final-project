@@ -12,12 +12,12 @@ Thoughts on how to generate an arbitrary NFA:
 - from that set of states, generate a random set of transitions between the states
 -}
 
-instance Arbitrary (NFA a) where
+instance Ord a => Arbitrary (NFA a) where
   arbitrary :: Gen (NFA a)
   arbitrary = undefined
 
-instance Arbitrary (DFA a) where
-  arbitrary :: Gen (DFA a)
+instance Ord a => Arbitrary (DFA (Set a)) where
+  arbitrary :: Gen (DFA (Set a))
   arbitrary = toDFA <$> (arbitrary :: Gen (NFA a))
 
 genNFAString :: NFA a -> Gen String

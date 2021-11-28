@@ -23,7 +23,7 @@ type DFA a = FA a (Map Char a)
 data Symbol
   = Char Char
   | Epsilon
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 findNeighborsN :: Ord a => NFA a -> a -> Symbol -> Set a
 findNeighborsN nfa state symbol = (transitionMap nfa ! state) ! symbol

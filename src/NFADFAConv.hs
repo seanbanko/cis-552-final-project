@@ -14,7 +14,7 @@ changeStates nfa = Set.powerSet (states nfa)
 changeTransitions :: Ord a => NFA a -> Map (Set a) (Map Char (Set a))
 changeTransitions nfa =
   let newStates = changeStates nfa
-   in Set.foldr (\x y -> Map.singleton x (createCharMap nfa x (alphabet nfa)) <> y) Map.empty newStates
+   in Set.foldr (\x y -> Map.insert x (createCharMap nfa x (alphabet nfa)) y) Map.empty newStates
   where
     transitionN' :: Ord a => NFA a -> a -> Char -> Set a
     transitionN' nfa state char =
@@ -23,7 +23,7 @@ changeTransitions nfa =
     newStateTransition :: Ord a => NFA a -> Set a -> Char -> Set a
     newStateTransition nfa newState char = flattenMap (\s -> transitionN' nfa s char) newState
     createCharMap :: Ord a => NFA a -> Set a -> Set Char -> Map Char (Set a)
-    createCharMap nfa newState = Set.foldr (\x y -> Map.singleton x (newStateTransition nfa newState x) <> y) Map.empty
+    createCharMap nfa newState = Set.foldr (\x y -> Map.insert x (newStateTransition nfa newState x) y) Map.empty
 
 changeStartState :: Ord a => NFA a -> Set a
 changeStartState nfa = transitionEpsilon nfa (startState nfa)

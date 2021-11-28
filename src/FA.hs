@@ -79,7 +79,7 @@ acceptD dfa s =
 bfsD :: Ord a => DFA a -> Set a -> [a] -> Set a
 bfsD dfa visited [] = visited
 bfsD dfa visited (q : qs) =
-  let neighbors = Set.foldr (\x y -> Set.singleton (transitionD dfa q x) <> y) Set.empty (alphabet dfa)
+  let neighbors = Set.foldr (Set.insert . transitionD dfa q) Set.empty (alphabet dfa)
       unvisitedNeighbors = Set.filter (`Set.notMember` visited) neighbors
    in bfsD dfa (visited <> unvisitedNeighbors) (qs ++ Set.toList unvisitedNeighbors)
 

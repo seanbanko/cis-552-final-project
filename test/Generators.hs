@@ -37,7 +37,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (NFA a) where
       tm <- genTransitionMapN s a
       ss <- genStartState s
       as <- genSubset s
-      return (F s a tm ss as)
+      return $ removeUnreachableStatesN (F s a tm ss as)
     where
       genSymbolMap :: a -> Set a -> Set Char -> Gen (Map Symbol (Set a))
       genSymbolMap state states alphabet =
@@ -65,7 +65,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (DFA a) where
       tm <- genTransitionMapD s a
       ss <- genStartState s
       as <- genSubset s
-      return (F s a tm ss as)
+      return $ removeUnreachableStatesD (F s a tm ss as)
     where
       genCharMap :: a -> Set a -> Set Char -> Gen (Map Char a)
       genCharMap state states alphabet =
@@ -121,5 +121,8 @@ prop_ValidDFA dfa =
       (Set.fromList (Map.keys map) == alphabet)
         && Map.foldr (\x y -> Set.member x states && y) True map
 
-genNFAString :: NFA a -> Gen String
-genNFAString nfa = listOf (elements (Set.toList (alphabet nfa)))
+quickCheckN :: (Testable prop) => Int -> prop -> IO ()
+quickCheckN n = quickCheck . withMaxSuccess n
+
+genString :: FA a s -> Gen String
+genString fa = listOf (elements (Set.toList (alphabet fa)))

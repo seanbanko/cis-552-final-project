@@ -25,9 +25,12 @@ data Symbol
   | Epsilon
   deriving (Eq, Ord, Show)
 
+-- Given an nfa n, state st, and symbol s, it returns the set of neighbors that can be
+-- reached after reading s in st.
 findNeighborsN :: Ord a => NFA a -> a -> Symbol -> Set a
 findNeighborsN nfa state symbol = (transitionMap nfa ! state) ! symbol
 
+-- Perfoms bfs to find the states reachable by only transitioning along epsilon edges
 findEpsilonStates :: Ord a => NFA a -> Set a -> [a] -> Set a
 findEpsilonStates nfa visited [] = visited
 findEpsilonStates nfa visited (q : qs) =
@@ -35,18 +38,26 @@ findEpsilonStates nfa visited (q : qs) =
       unvisitedNeighbors = Set.filter (`Set.notMember` visited) neighbors
    in findEpsilonStates nfa (visited <> unvisitedNeighbors) (qs ++ Set.toList unvisitedNeighbors)
 
+-- Given an nfa n and state st, it returns the set of states reachable by transitioning
+-- only on epsilon edges from st.
 transitionEpsilon :: Ord a => NFA a -> a -> Set a
 transitionEpsilon nfa state = findEpsilonStates nfa (Set.singleton state) [state]
 
+-- Given a function f :: a -> Set a and a set s :: (Set a), it returns the set that is formed
+-- by applying f to each element in s to get s' :: (Set (Set a)), and then flattens s'
 flattenMap :: Ord a => (a -> Set a) -> Set a -> Set a
 flattenMap f = foldr ((<>) . f) Set.empty
 
+-- Given an nfa n, state st, and char c, it returns the set of states that can be reached
+-- from st on c.
 transitionN :: Ord a => NFA a -> a -> Char -> Set a
 transitionN nfa state char =
   let epsilonStates = transitionEpsilon nfa state
       charStates = flattenMap (\s -> findNeighborsN nfa s (Char char)) epsilonStates
    in flattenMap (transitionEpsilon nfa) charStates
 
+-- Given an nfa n, state st and string s, it returns the set of states that can be reached
+-- from st on s.
 stringTransitionN :: forall a. Ord a => NFA a -> a -> String -> Set a
 stringTransitionN nfa state [] = transitionEpsilon nfa state
 stringTransitionN nfa state (x : xs) = go (transitionN nfa state x) xs
@@ -61,9 +72,13 @@ stringTransitionN nfa state (x : xs) = go (transitionN nfa state x) xs
 acceptN :: Ord a => NFA a -> String -> Bool
 acceptN nfa s = Set.intersection (stringTransitionN nfa (startState nfa) s) (acceptStates nfa) /= Set.empty
 
+-- Given a dfa d, state st, and char c, it returns the state that can be reached
+-- from st on c.
 transitionD :: Ord a => DFA a -> a -> Char -> a
 transitionD dfa state char = (transitionMap dfa ! state) ! char
 
+-- Given a dfa d, state st, and string s, it returns the state that can be reached
+-- from st on s.
 stringTransitionD :: Ord a => DFA a -> a -> String -> a
 stringTransitionD dfa state [] = state
 stringTransitionD dfa state (x : xs) =
@@ -76,6 +91,7 @@ acceptD dfa s =
   let endState = stringTransitionD dfa (startState dfa) s
    in Set.member endState (acceptStates dfa)
 
+-- Performs bfs on a dfa
 bfsD :: Ord a => DFA a -> Set a -> [a] -> Set a
 bfsD dfa visited [] = visited
 bfsD dfa visited (q : qs) =
@@ -83,9 +99,11 @@ bfsD dfa visited (q : qs) =
       unvisitedNeighbors = Set.filter (`Set.notMember` visited) neighbors
    in bfsD dfa (visited <> unvisitedNeighbors) (qs ++ Set.toList unvisitedNeighbors)
 
+-- Performs bfs on dfa d from the start state of d to find the reachable states
 findReachableStatesD :: Ord a => DFA a -> Set a
 findReachableStatesD dfa = bfsD dfa (Set.singleton (startState dfa)) [startState dfa]
 
+-- Removes the unreachable states from a dfa
 removeUnreachableStatesD :: Ord a => DFA a -> DFA a
 removeUnreachableStatesD dfa =
   let rs = findReachableStatesD dfa
@@ -96,17 +114,20 @@ removeUnreachableStatesD dfa =
       as = Set.intersection (acceptStates dfa) rs
    in F s a tm ss as
 
+-- Performs bfs on an nfa
 bfsN :: Ord a => NFA a -> Set a -> [a] -> Set a
 bfsN nfa visited [] = visited
 bfsN nfa visited (q : qs) =
   let symbols = Set.insert Epsilon (Set.map Char (alphabet nfa))
       neighbors = Set.foldr (\x y -> findNeighborsN nfa q x <> y) Set.empty symbols
       unvisitedNeighbors = Set.filter (`Set.notMember` visited) neighbors
-   in findEpsilonStates nfa (visited <> unvisitedNeighbors) (qs ++ Set.toList unvisitedNeighbors)
+   in bfsN nfa (visited <> unvisitedNeighbors) (qs ++ Set.toList unvisitedNeighbors)
 
+-- Performs bfs on an nfa n from the start state of n to find the reachable states
 findReachableStatesN :: Ord a => NFA a -> Set a
 findReachableStatesN nfa = bfsN nfa (Set.singleton (startState nfa)) [startState nfa]
 
+-- Removes the unreachable states from an nfa
 removeUnreachableStatesN :: Ord a => NFA a -> NFA a
 removeUnreachableStatesN nfa =
   let rs = findReachableStatesN nfa
@@ -116,9 +137,6 @@ removeUnreachableStatesN nfa =
       ss = startState nfa
       as = Set.intersection (acceptStates nfa) rs
    in F s a tm ss as
-
-isDFA :: DFA a -> Bool
-isDFA = undefined
 
 -- -- is this even a function we can write? (potentially infinite language)
 -- -- this would need to be a potentially infinite set / infinite list

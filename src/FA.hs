@@ -6,14 +6,6 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 
-{-
-type State = (Bool, Int)
-type NFA = Map State (Map Char (Set State))
-type DFA = Map State (Map Char State) -- should we create a new type for DFA's?
--}
--- type Symbol = Char
--- Should the adjacentList be a map or a function with type State -> Char -> Set State?
-
 data FA a s = F {states :: Set a, alphabet :: Set Char, transitionMap :: Map a s, startState :: a, acceptStates :: Set a} deriving (Eq, Show)
 
 type NFA a = FA a (Map Symbol (Set a))
@@ -43,13 +35,17 @@ findEpsilonStates nfa visited (q : qs) =
 transitionEpsilon :: Ord a => NFA a -> a -> Set a
 transitionEpsilon nfa state = findEpsilonStates nfa (Set.singleton state) [state]
 
--- Given a function f :: a -> Set a and a set s :: (Set a), it returns the set that is formed
+-- Given a function f :: a -> Set a and set s :: (Set a), it returns the set that is formed
 -- by applying f to each element in s to get s' :: (Set (Set a)), and then flattens s'
 flattenMap :: Ord a => (a -> Set a) -> Set a -> Set a
 flattenMap f = foldr ((<>) . f) Set.empty
 
 -- Given an nfa n, state st, and char c, it returns the set of states that can be reached
--- from st on c.
+-- from st on c. It does this by first finding the set of states (epsilonStates) reachable from transitioning
+-- only on epsilon edges. For each state in epsilonStates, it finds the set of states reachable from transitioning
+-- on c. This will give you a set of sets, so it flattens that set (charStates). For each state in charState,
+-- it finds the set of states reachable from transitioning only on epsilon edges. This will give you a set of sets,
+-- so it flattens that set.
 transitionN :: Ord a => NFA a -> a -> Char -> Set a
 transitionN nfa state char =
   let epsilonStates = transitionEpsilon nfa state
@@ -57,7 +53,8 @@ transitionN nfa state char =
    in flattenMap (transitionEpsilon nfa) charStates
 
 -- Given an nfa n, state st and string s, it returns the set of states that can be reached
--- from st on s.
+-- from st on s. It does this using tail recursion because we want to process the string
+-- from left to right.
 stringTransitionN :: forall a. Ord a => NFA a -> a -> String -> Set a
 stringTransitionN nfa state [] = transitionEpsilon nfa state
 stringTransitionN nfa state (x : xs) = go (transitionN nfa state x) xs
@@ -103,16 +100,17 @@ bfsD dfa visited (q : qs) =
 findReachableStatesD :: Ord a => DFA a -> Set a
 findReachableStatesD dfa = bfsD dfa (Set.singleton (startState dfa)) [startState dfa]
 
--- Removes the unreachable states from a dfa
+-- Removes the unreachable states from a dfa. First, it finds the reachable states.
+-- Then, it removes the unreachable states from the transitionMap. Then, it
+-- removes the unreachable states from the acceptStates.
 removeUnreachableStatesD :: Ord a => DFA a -> DFA a
 removeUnreachableStatesD dfa =
   let rs = findReachableStatesD dfa
-      s = Set.intersection rs (states dfa)
       a = alphabet dfa
       tm = Map.filterWithKey (\k _ -> Set.member k rs) (transitionMap dfa)
       ss = startState dfa
       as = Set.intersection (acceptStates dfa) rs
-   in F s a tm ss as
+   in F rs a tm ss as
 
 -- Performs bfs on an nfa
 bfsN :: Ord a => NFA a -> Set a -> [a] -> Set a
@@ -127,16 +125,17 @@ bfsN nfa visited (q : qs) =
 findReachableStatesN :: Ord a => NFA a -> Set a
 findReachableStatesN nfa = bfsN nfa (Set.singleton (startState nfa)) [startState nfa]
 
--- Removes the unreachable states from an nfa
+-- Removes the unreachable states from a nfa. First, it finds the reachable states.
+-- Then, it removes the unreachable states from the transitionMap. Then, it
+-- removes the unreachable states from the acceptStates.
 removeUnreachableStatesN :: Ord a => NFA a -> NFA a
 removeUnreachableStatesN nfa =
   let rs = findReachableStatesN nfa
-      s = Set.intersection rs (states nfa)
       a = alphabet nfa
       tm = Map.filterWithKey (\k _ -> Set.member k rs) (transitionMap nfa)
       ss = startState nfa
       as = Set.intersection (acceptStates nfa) rs
-   in F s a tm ss as
+   in F rs a tm ss as
 
 -- -- is this even a function we can write? (potentially infinite language)
 -- -- this would need to be a potentially infinite set / infinite list

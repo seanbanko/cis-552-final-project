@@ -6,5 +6,5 @@ import RegExp
 toRegExp :: NFA a -> RegExp
 toRegExp = undefined
 
-toNFA :: RegExp -> NFA a
+toNFA :: RegExp -> NFA Int
 toNFA = undefined

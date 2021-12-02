@@ -7,13 +7,14 @@ import RegExp
 import Test.HUnit
 import Test.QuickCheck
 
-prop_roundTripR :: RegExp -> Bool
-prop_roundTripR r = toRegExp (toNFA r) == r
+prop_roundTripR :: RegExp -> Property
+prop_roundTripR r = toRegExp (toNFA r) %==% r
 
 -- not necessarilly equal, generate the same language
 
-prop_roundTripN :: Eq a => NFA a -> Bool
-prop_roundTripN n = toNFA (toRegExp n) == n
+prop_roundTripN :: Ord a => NFA a -> Property
+prop_roundTripN nfa = forAll (genString nfa) $
+  \s -> acceptN nfa s == acceptN (toNFA (toRegExp nfa)) s
 
 -- not necessarilly equal, accept the same language
 

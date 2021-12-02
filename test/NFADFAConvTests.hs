@@ -55,8 +55,9 @@ test_toDFA =
       ]
 
 -- check if the NFA n and (toDFA n) accept the same language
-prop_equivalent :: NFA a -> Bool
-prop_equivalent n = undefined
+prop_equivalent :: Ord a => NFA a -> Property
+prop_equivalent nfa = forAll (genString nfa) $
+  \s -> classify (acceptN nfa s) "accepting" $ acceptN nfa s == acceptD (toDFA nfa) s
 
 prop_isDFA :: Ord a => NFA a -> Bool
-prop_isDFA n = isDFA (toDFA n)
+prop_isDFA n = prop_ValidDFA (toDFA n)

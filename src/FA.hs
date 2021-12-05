@@ -35,6 +35,9 @@ findEpsilonStates nfa visited (q : qs) =
 transitionEpsilon :: Ord a => NFA a -> a -> Set a
 transitionEpsilon nfa state = findEpsilonStates nfa (Set.singleton state) [state]
 
+flatten :: Ord a => Set (Set a) -> Set a
+flatten = foldr (<>) Set.empty
+
 -- Given a function f :: a -> Set a and set s :: (Set a), it returns the set that is formed
 -- by applying f to each element in s to get s' :: (Set (Set a)), and then flattens s'
 flattenMap :: Ord a => (a -> Set a) -> Set a -> Set a
@@ -67,7 +70,7 @@ stringTransitionN nfa state (x : xs) = go (transitionN nfa state x) xs
 
 -- Returns true iff the NFA accepts the string
 acceptN :: Ord a => NFA a -> String -> Bool
-acceptN nfa s = Set.intersection (stringTransitionN nfa (startState nfa) s) (acceptStates nfa) /= Set.empty
+acceptN nfa s = not $ Set.disjoint (stringTransitionN nfa (startState nfa) s) (acceptStates nfa)
 
 -- Given a dfa d, state st, and char c, it returns the state that can be reached
 -- from st on c.
@@ -142,9 +145,9 @@ removeUnreachableStatesN nfa =
 -- language :: NFA -> List String
 -- language = undefined
 
--- -- Is the language of this NFA the empty set?
--- isVoid :: NFA -> Bool
--- isVoid = undefined
+-- Is the language of this NFA the empty set?
+isVoid :: NFA a -> Bool
+isVoid = undefined
 
 {-
 isVoid n = lanauge n == empty set

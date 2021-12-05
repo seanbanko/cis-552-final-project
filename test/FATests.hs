@@ -64,6 +64,50 @@ n4 =
       as = Set.singleton 1
    in F s a tm ss as
 
+d5 :: DFA String
+d5 =
+  let s = Set.fromList ["q0", "q1", "q2", "q3", "q4", "q5"]
+      a = Set.fromList ['0', '1']
+      q0Map = Map.fromList [('0', "q1"), ('1', "q2")]
+      q1Map = Map.fromList [('0', "q3"), ('1', "q4")]
+      q2Map = Map.fromList [('0', "q4"), ('1', "q3")]
+      q3Map = Map.fromList [('0', "q5"), ('1', "q5")]
+      q4Map = Map.fromList [('0', "q5"), ('1', "q5")]
+      q5Map = Map.fromList [('0', "q5"), ('1', "q5")]
+      tm = Map.fromList [("q0", q0Map), ("q1", q1Map), ("q2", q2Map), ("q3", q3Map), ("q4", q4Map), ("q5", q5Map)]
+      ss = "q0"
+      as = Set.fromList ["q1", "q2", "q5"]
+   in F s a tm ss as
+
+d6 :: DFA String
+d6 =
+  let s = Set.fromList ["a", "b", "c", "d", "e", "f"]
+      a = Set.fromList ['0', '1']
+      aMap = Map.fromList [('0', "b"), ('1', "c")]
+      bMap = Map.fromList [('0', "a"), ('1', "d")]
+      cMap = Map.fromList [('0', "e"), ('1', "f")]
+      dMap = Map.fromList [('0', "e"), ('1', "f")]
+      eMap = Map.fromList [('0', "e"), ('1', "f")]
+      fMap = Map.fromList [('0', "f"), ('1', "f")]
+      tm = Map.fromList [("a", aMap), ("b", bMap), ("c", cMap), ("d", dMap), ("e", eMap), ("f", fMap)]
+      ss = "a"
+      as = Set.fromList ["c", "d", "e"]
+   in F s a tm ss as
+
+d7 :: DFA String
+d7 =
+  let s = Set.fromList ["a", "b", "c", "d", "e"]
+      a = Set.fromList ['a', 'b']
+      aMap = Map.fromList [('a', "b"), ('b', "d")]
+      bMap = Map.fromList [('a', "c"), ('b', "e")]
+      cMap = Map.fromList [('a', "b"), ('b', "e")]
+      dMap = Map.fromList [('a', "c"), ('b', "e")]
+      eMap = Map.fromList [('a', "e"), ('b', "e")]
+      tm = Map.fromList [("a", aMap), ("b", bMap), ("c", cMap), ("d", dMap), ("e", eMap)]
+      ss = "a"
+      as = Set.fromList ["c", "e"]
+   in F s a tm ss as
+
 test_stringTransitionN :: Test
 test_stringTransitionN =
   "string transition tests"

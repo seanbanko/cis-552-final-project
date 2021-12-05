@@ -31,7 +31,7 @@ changeStartState nfa = transitionEpsilon nfa (startState nfa)
 changeAcceptStates :: Ord a => NFA a -> Set (Set a)
 changeAcceptStates nfa =
   let newStates = changeStates nfa
-   in Set.filter (\x -> Set.intersection x (acceptStates nfa) /= Set.empty) newStates
+   in Set.filter (\x -> not $ Set.disjoint x (acceptStates nfa)) newStates
 
 toDFA :: Ord a => NFA a -> DFA (Set a)
 toDFA nfa =

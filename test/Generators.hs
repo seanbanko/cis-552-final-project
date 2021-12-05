@@ -37,7 +37,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (NFA a) where
       tm <- genTransitionMapN s a
       ss <- genStartState s
       as <- genSubset s
-      return $ removeUnreachableStatesN (F s a tm ss as)
+      return $ F s a tm ss as
     where
       genSymbolMap :: a -> Set a -> Set Char -> Gen (Map Symbol (Set a))
       genSymbolMap state states alphabet =
@@ -65,7 +65,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (DFA a) where
       tm <- genTransitionMapD s a
       ss <- genStartState s
       as <- genSubset s
-      return $ removeUnreachableStatesD (F s a tm ss as)
+      return $ F s a tm ss as
     where
       genCharMap :: a -> Set a -> Set Char -> Gen (Map Char a)
       genCharMap state states alphabet =
@@ -97,13 +97,13 @@ prop_ValidNFA nfa =
       ss = startState nfa
       as = acceptStates nfa
    in Set.member ss s && Set.isSubsetOf as s && (Set.fromList (Map.keys tm) == s)
-        && Map.foldr (\x y -> validSymbolMap s a x && y) True tm
+        && all (validSymbolMap s a) tm
   where
     validSymbolMap :: Ord a => Set a -> Set Char -> Map Symbol (Set a) -> Bool
     validSymbolMap states alphabet map =
       let symbols = Set.insert Epsilon (Set.map Char alphabet)
        in (Set.fromList (Map.keys map) == symbols)
-            && Map.foldr (\x y -> Set.isSubsetOf x states && y) True map
+            && all (`Set.isSubsetOf` states) map
 
 -- Returns true iff the DFA dfa satisfies all validity properties
 prop_ValidDFA :: Ord a => DFA a -> Bool
@@ -114,12 +114,12 @@ prop_ValidDFA dfa =
       ss = startState dfa
       as = acceptStates dfa
    in Set.member ss s && Set.isSubsetOf as s && (Set.fromList (Map.keys tm) == s)
-        && Map.foldr (\x y -> validCharMap s a x && y) True tm
+        && all (validCharMap s a) tm
   where
     validCharMap :: Ord a => Set a -> Set Char -> Map Char a -> Bool
     validCharMap states alphabet map =
       (Set.fromList (Map.keys map) == alphabet)
-        && Map.foldr (\x y -> Set.member x states && y) True map
+        && all (`Set.member` states) map
 
 quickCheckN :: (Testable prop) => Int -> prop -> IO ()
 quickCheckN n = quickCheck . withMaxSuccess n

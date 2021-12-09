@@ -5,7 +5,9 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 import FA
+import Generators
 import Test.HUnit
+import Test.QuickCheck
 
 -- nfa that accepts strings that contain either 101 or 11 as a substring (Sipser - page 48)
 n1 :: NFA Int
@@ -152,3 +154,6 @@ test_acceptN =
         acceptN n3 "000000000" ~?= True,
         acceptN n3 "0000000000" ~?= True
       ]
+
+prop_dfaEquivalence :: Ord a => DFA a -> Bool
+prop_dfaEquivalence dfa = equivalentDFA dfa dfa

@@ -146,9 +146,31 @@ notDFA dfa =
   let newAcceptingStates = Set.difference (states dfa) (acceptStates dfa)
    in dfa {acceptStates = newAcceptingStates}
 
+intersectionDFA :: forall a b. (Ord a, Ord b) => DFA a -> DFA b -> DFA (a, b)
+intersectionDFA dfa1 dfa2 =
+  if alphabet dfa1 == alphabet dfa2
+    then
+      let s = Set.cartesianProduct (states dfa1) (states dfa2)
+          tm = changeTransitions dfa1 dfa2 s
+          ss = (startState dfa1, startState dfa2)
+          as = Set.cartesianProduct (acceptStates dfa1) (acceptStates dfa2)
+       in F s (alphabet dfa1) tm ss as
+    else error "DFA's have different alphabets"
+  where
+    changeTransitions :: DFA a -> DFA b -> Set (a, b) -> Map (a, b) (Map Char (a, b))
+    changeTransitions dfa1 dfa2 newStates = Set.foldr (\x y -> Map.insert x (createCharMap dfa1 dfa2 x (alphabet dfa1)) y) Map.empty newStates
+    createCharMap :: DFA a -> DFA b -> (a, b) -> Set Char -> Map Char (a, b)
+    createCharMap dfa1 dfa2 (s1, s2) = Set.foldr (\x y -> Map.insert x (newStateTransition dfa1 dfa2 (s1, s2) x) y) Map.empty
+    newStateTransition :: DFA a -> DFA b -> (a, b) -> Char -> (a, b)
+    newStateTransition dfa1 dfa2 (s1, s2) char = (transitionD dfa1 s1 char, transitionD dfa2 s2 char)
+
 -- Is the language of this NFA the empty set?
-isVoid :: NFA a -> Bool
-isVoid = undefined
+isVoid :: Ord a => DFA a -> Bool
+isVoid dfa = Set.disjoint (findReachableStatesD dfa) (acceptStates dfa)
+
+equivalentDFA :: (Ord a, Ord b) => DFA a -> DFA b -> Bool
+equivalentDFA dfa1 dfa2 =
+  isVoid (intersectionDFA dfa1 (notDFA dfa2))
 
 {-
 isVoid n = lanauge n == empty set

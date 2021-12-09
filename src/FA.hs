@@ -109,11 +109,9 @@ findReachableStatesD dfa = bfsD dfa (Set.singleton (startState dfa)) [startState
 removeUnreachableStatesD :: Ord a => DFA a -> DFA a
 removeUnreachableStatesD dfa =
   let rs = findReachableStatesD dfa
-      a = alphabet dfa
       tm = Map.filterWithKey (\k _ -> Set.member k rs) (transitionMap dfa)
-      ss = startState dfa
       as = Set.intersection (acceptStates dfa) rs
-   in F rs a tm ss as
+   in dfa {states = rs, transitionMap = tm, acceptStates = as}
 
 -- Performs bfs on an nfa
 bfsN :: Ord a => NFA a -> Set a -> [a] -> Set a
@@ -134,16 +132,19 @@ findReachableStatesN nfa = bfsN nfa (Set.singleton (startState nfa)) [startState
 removeUnreachableStatesN :: Ord a => NFA a -> NFA a
 removeUnreachableStatesN nfa =
   let rs = findReachableStatesN nfa
-      a = alphabet nfa
       tm = Map.filterWithKey (\k _ -> Set.member k rs) (transitionMap nfa)
-      ss = startState nfa
       as = Set.intersection (acceptStates nfa) rs
-   in F rs a tm ss as
+   in nfa {states = rs, transitionMap = tm, acceptStates = as}
 
 -- -- is this even a function we can write? (potentially infinite language)
 -- -- this would need to be a potentially infinite set / infinite list
 -- language :: NFA -> List String
 -- language = undefined
+
+notDFA :: Ord a => DFA a -> DFA a
+notDFA dfa =
+  let newAcceptingStates = Set.difference (states dfa) (acceptStates dfa)
+   in dfa {acceptStates = newAcceptingStates}
 
 -- Is the language of this NFA the empty set?
 isVoid :: NFA a -> Bool

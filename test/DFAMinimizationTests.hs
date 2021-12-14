@@ -59,25 +59,27 @@ test_minimizeDFA =
         minimizeDFA d7 ~?= d7'
       ]
 
--- checks if DFA d and (minimize d) accept the same language. we could generate
--- arbitary strings from the alphabet of d and check if accept d s == accept (minimize d) s
-prop_equivalent :: Ord a => DFA a -> Property
-prop_equivalent dfa = forAll (genString dfa) $
-  \s -> classify (acceptD dfa s) "accepting" $ acceptD dfa s == acceptD (minimizeDFA dfa) s
+prop_equivalent :: Ord a => NFA a -> Property
+prop_equivalent nfa =
+  let dfa = toDFA nfa
+      minDfa = minimizeDFA dfa
+   in classify (Set.size (states minDfa) < Set.size (states dfa)) "non-trivial" $ equivalentDFA dfa minDfa
 
--- prop_isDFA :: DFA a -> Bool
-prop_isDFA :: Ord a => DFA a -> Bool
-prop_isDFA dfa = prop_ValidDFA (minimizeDFA dfa)
+prop_isDFA :: Ord a => NFA a -> Property
+prop_isDFA nfa =
+  let dfa = toDFA nfa
+      minDfa = minimizeDFA dfa
+   in classify (Set.size (states minDfa) < Set.size (states dfa)) "non-trivial" $ prop_ValidDFA dfa
 
 prop_isSmaller :: Ord a => NFA a -> Property
 prop_isSmaller nfa =
   let dfa = toDFA nfa
-      minDFA = minimizeDFA dfa
-   in classify (Set.size (states minDFA) < Set.size (states dfa)) "non-trivial" $ Set.size (states minDFA) <= Set.size (states dfa)
+      minDfa = minimizeDFA dfa
+   in classify (Set.size (states minDfa) < Set.size (states dfa)) "non-trivial" $ Set.size (states minDfa) <= Set.size (states dfa)
 
 prop_isMinimal :: Ord a => NFA a -> Property
 prop_isMinimal nfa =
   let dfa = toDFA nfa
-      minDFA = minimizeDFA dfa
-      minDFA' = minimizeDFA minDFA
-   in classify (Set.size (states minDFA) < Set.size (states dfa)) "non-trivial" $ Set.size (states minDFA) == Set.size (states minDFA')
+      minDfa = minimizeDFA dfa
+      minDfa' = minimizeDFA minDfa
+   in classify (Set.size (states minDfa) < Set.size (states dfa)) "non-trivial" $ Set.size (states minDfa) == Set.size (states minDfa')

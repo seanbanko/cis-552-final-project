@@ -155,5 +155,11 @@ test_acceptN =
         acceptN n3 "0000000000" ~?= True
       ]
 
-prop_dfaEquivalence :: Ord a => DFA a -> Bool
-prop_dfaEquivalence dfa = equivalentDFA dfa dfa
+prop_dfaEquivIdentity :: Ord a => DFA a -> Bool
+prop_dfaEquivIdentity dfa = equivalentDFA dfa dfa
+
+prop_dfaEquivNot :: Ord a => DFA a -> Bool
+prop_dfaEquivNot dfa = not $ equivalentDFA dfa (notDFA dfa)
+
+prop_dfaEquivIntersection :: Ord a => DFA a -> Bool
+prop_dfaEquivIntersection dfa = equivalentDFA dfa (intersectionDFA dfa dfa)

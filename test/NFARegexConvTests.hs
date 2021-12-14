@@ -7,6 +7,38 @@ import RegExp
 import Test.HUnit
 import Test.QuickCheck
 
+import qualified Data.List as List
+import Data.Map (Map, (!), (!?))
+import qualified Data.Map as Map
+import Data.Set (Set)
+import qualified Data.Set as Set
+
+n1 :: NFA Int
+n1 =
+  let s = Set.fromList [1, 2, 3, 4]
+      a = Set.fromList ['0', '1']
+      state1Map = Map.fromList [(FA.Char '0', Set.singleton 1), (FA.Char '1', Set.fromList [1, 2]), (Epsilon, Set.empty)]
+      state2Map = Map.fromList [(FA.Char '0', Set.singleton 3), (FA.Char '1', Set.empty), (Epsilon, Set.singleton 3)]
+      state3Map = Map.fromList [(FA.Char '0', Set.empty), (FA.Char '1', Set.singleton 4), (Epsilon, Set.empty)]
+      state4Map = Map.fromList [(FA.Char '0', Set.singleton 4), (FA.Char '1', Set.singleton 4), (Epsilon, Set.empty)]
+      tm = Map.fromList [(1, state1Map), (2, state2Map), (3, state3Map), (4, state4Map)]
+      ss = 1
+      as = Set.singleton 4
+   in F s a tm ss as
+
+
+test_shiftStates :: Test
+test_shiftStates =
+  "shift states tests"
+    ~: TestList
+      [ states (shiftStates 5 n1) ~?= Set.fromList [6, 7, 8, 9],
+        (transitionMap (shiftStates 5 n1)) ! 6 ~?= Map.fromList [(FA.Char '0', Set.singleton 6), (FA.Char '1', Set.fromList [6, 7]), (Epsilon, Set.empty)], 
+        (transitionMap (shiftStates 5 n1)) ! 7 ~?= Map.fromList [(FA.Char '0', Set.singleton 8), (FA.Char '1', Set.empty), (Epsilon, Set.singleton 8)], 
+        (transitionMap (shiftStates 5 n1)) ! 8 ~?= Map.fromList [(FA.Char '0', Set.empty), (FA.Char '1', Set.singleton 9), (Epsilon, Set.empty)],
+        (transitionMap (shiftStates 5 n1)) ! 9 ~?= Map.fromList [(FA.Char '0', Set.singleton 9), (FA.Char '1', Set.singleton 9), (Epsilon, Set.empty)]
+      ]
+
+
 prop_roundTripR :: RegExp -> Property
 prop_roundTripR r = toRegExp (toNFA r) %==% r
 

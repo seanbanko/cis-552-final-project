@@ -1,5 +1,8 @@
 module NFADFAConvTests where
 
+import qualified Data.List as List
+import Data.Map (Map, (!), (!?))
+import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 import FA
@@ -8,6 +11,7 @@ import Generators
 import NFADFAConv
 import Test.HUnit
 import Test.QuickCheck
+
 
 d1 :: DFA (Set Int)
 d1 = toDFA n1

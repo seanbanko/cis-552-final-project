@@ -76,9 +76,12 @@ union n1 n2 =
     let (F s1 a1 tm1 ss1 as1) = shiftStates 1 n1 -- shift the first in case it has a 0 state already
         (F s2 a2 tm2 ss2 as2) = shiftStates (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
         sts = Set.unions [Set.singleton ss, s1, s2]
-        a = Set.union a1 a2 -- TODO the union operation may not be necessary here. need/want to enforce same alphabet anyway
+        -- TODO the union operation may not be necessary here. need/want to enforce same alphabet anyway
+        a = Set.union a1 a2 
+        -- Unions the transition functions and the adds an epsilon transition 
+        -- from the new start state to both of the original start states
+        -- TODO also need to do this: Map.insert ss (Map.fromList (map (, Empty) a)) 
         tm = Map.insert ss (Map.singleton Epsilon (Set.fromList [ss1, ss2])) (Map.union tm1 tm2)
-             -- plus Map.insert ss (Map.fromList (map (, Empty) a)) 
         ss = 0 
         as = Set.union as1 as2
      in F sts a tm ss as
@@ -110,15 +113,22 @@ prop_union = undefined
 
 concatenate :: NFA Int -> NFA Int -> NFA Int
 concatenate n1@(F s1 a1 tm1 ss1 as1) n2 = 
-    let (F s2 a2 tm2 ss2 as2) = shiftStates (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
-        sts = Set.unions [s1, s2]
-        a = Set.union a1 a2 -- TODO the union operation may not be necessary here. need/want to enforce same alphabet anyway
-        -- Add Epsilon transitions from each accepting state of n1 to the start state of n2
-        tm = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton ss2))) (Map.union tm1 tm2) (acceptStates n1)
-        ss = startState n1
-        as = as2 
-     in F sts a tm ss as
+  let (F s2 a2 tm2 ss2 as2) = shiftStates (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
+      sts = Set.unions [s1, s2]
+      a = Set.union a1 a2 -- TODO the union operation may not be necessary here. need/want to enforce same alphabet anyway
+      tm = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton ss2))) (Map.union tm1 tm2) (acceptStates n1)
+      ss = startState n1
+      as = as2 
+    in F sts a tm ss as
 
 star :: NFA Int -> NFA Int
-star nfa = undefined
-
+star n =
+    let F s a tm ss as = if Set.findMin (states n1) == 0 then shiftStates 1 n else n -- shift the states to accomodate new start state if necessary
+        s' = Set.insert ss' s
+        a' = a
+        -- Adds an epsilon transition from each accepting state of n to the new start state
+        -- and from the new start state to the original start state
+        tm' = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton ss'))) (Map.insert ss' (Map.singleton Epsilon (Set.singleton ss)) tm) as
+        ss' = 0
+        as' = Set.insert ss' as
+     in F s' a' tm' ss' as'

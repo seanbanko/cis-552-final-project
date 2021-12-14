@@ -2,6 +2,7 @@ module NFARegexConvTests where
 
 import FA
 import Generators
+import NFADFAConv
 import NFARegexConv
 import RegExp
 import Test.HUnit
@@ -12,9 +13,10 @@ prop_roundTripR r = toRegExp (toNFA r) %==% r
 
 -- not necessarilly equal, generate the same language
 
-prop_roundTripN :: Ord a => NFA a -> Property
-prop_roundTripN nfa = forAll (genString nfa) $
-  \s -> acceptN nfa s == acceptN (toNFA (toRegExp nfa)) s
+prop_roundTripN :: Ord a => NFA a -> Bool
+prop_roundTripN nfa =
+  let nfa' = toNFA (toRegExp nfa)
+   in equivalentDFA (toDFA nfa) (toDFA nfa')
 
 -- not necessarilly equal, accept the same language
 

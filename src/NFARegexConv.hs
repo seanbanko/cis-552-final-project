@@ -18,6 +18,12 @@ emptyTransitionMapNFA states alphabet =
     Map.fromList (zip (Set.toList states) (repeat (Map.fromList (zip (Set.toList symbols) (repeat Set.empty)))))
     where symbols = Set.insert Epsilon (Set.map FA.Char alphabet)
 
+
+-- TODO using void for the base case is not actually what I want
+smart :: RegExp -> RegExp
+smart (RegExp.Char cs) | Set.size cs > 1 = foldr (Alt . RegExp.Char . Set.singleton) RegExp.Void cs
+smart _ = undefined
+
 -- Formally, N = ({q1,q2}, Σ, δ, q1, {q2}), where we describe δ by saying
 -- that δ(q1,a) = {q2}and that δ(r,b) = ∅for r 6= q1 or b 6= a
 -- TODO either change the type of RegExp char to not be a set or make a smart constructor

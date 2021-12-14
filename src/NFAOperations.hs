@@ -110,11 +110,13 @@ test_union =
 prop_union :: NFA Int -> NFA Int -> Bool
 prop_union = undefined
 
+bRE :: RegExp
+bRE = RegExp.Char (Set.singleton 'b')
 
 concatenate :: NFA Int -> NFA Int -> NFA Int
 concatenate n1@(F s1 a1 tm1 ss1 as1) n2 = 
-  let (F s2 a2 tm2 ss2 as2) = shiftStates (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
-      sts = Set.unions [s1, s2]
+  let F s2 a2 tm2 ss2 as2 = shiftStates (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
+      sts = Set.union s1 s2
       a = Set.union a1 a2 -- TODO the union operation may not be necessary here. need/want to enforce same alphabet anyway
       tm = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton ss2))) (Map.union tm1 tm2) (acceptStates n1)
       ss = startState n1

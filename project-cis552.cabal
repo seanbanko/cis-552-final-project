@@ -29,13 +29,13 @@ library
       FA
       Lib
       NFADFAConv
+      NFAOperations
       NFARegexConv
       RegExp
       DFAMinimizationTests
       FATests
       Generators
       NFADFAConvTests
-      NFARegexConvTests
       Spec
   other-modules:
       Paths_project_cis552
@@ -108,7 +108,6 @@ test-suite project-cis552-test
       FATests
       Generators
       NFADFAConvTests
-      NFARegexConvTests
       Paths_project_cis552
   hs-source-dirs:
       test

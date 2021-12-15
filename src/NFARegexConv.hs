@@ -71,7 +71,6 @@ convertTransitions d q0 qf =
         tm''' = Map.unionWith Map.union tm'' (emptyTransitionMapGNFA (states d) q0 qf)
     in tm'''
 
-
 toGNFA :: DFA Int -> GNFA Int
 toGNFA d@(F qs sigma tm q0 fs) = 
     let sigma' = sigma
@@ -81,6 +80,16 @@ toGNFA d@(F qs sigma tm q0 fs) =
         qs' = Set.unions [qs, Set.singleton q0', fs']
         tm' = convertTransitions d q0' qf'
      in F qs' sigma' tm' q0' fs'
+
+convert :: Ord a => GNFA a -> RegExp
+convert g
+    | Set.size (states g) == 2 = 
+        case Map.keys (transitionMap g ! startState g) of
+            [r] -> r
+            _ -> error "problem"
+    | otherwise = undefined
+    
+
 
 toRegExp :: NFA a -> RegExp
 toRegExp = undefined

@@ -1,6 +1,7 @@
 module NFARegexConv where
 
 import FA
+import NFADFAConv
 import NFAOperations
 import RegExp
 
@@ -10,6 +11,7 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Test.HUnit
+import Data.Tuple
 
 -- creates a transition map that, for each state, maps each symbol to the empty set 
 emptyTransitionMapNFA :: Ord a => Set a -> Set Char -> Map a (Map Symbol (Set a))
@@ -51,25 +53,40 @@ toNFA (Alt r1 r2)       = NFAOperations.union (toNFA r1) (toNFA r2)
 toNFA (Append r1 r2)    = NFAOperations.concatenate (toNFA r1) (toNFA r2)
 toNFA (Star r)          = NFAOperations.star (toNFA r) 
 
-type GNFA a = FA a (Map RegExp (Set a))
+type GNFA a = FA a (Map a RegExp)
 
--- creates a transition map for a GNFA mapping every state to every other state
--- except no mapping from the new accepting state or to the new start state
-emptyTransitionMapGNFA :: Ord a => Set a -> a -> a -> Map a (Map RegExp (Set a))
-emptyTransitionMapGNFA qs q0 qf =
-    Map.fromList (zip (Set.toList (Set.delete qf qs)) (repeat (Map.singleton RegExp.Void (Set.delete q0 qs))))
+-- creates a transition map for a GNFA mapping each state to each other state with a Void arrow
+voidTransitionMapGNFA :: Ord a => Set a -> a -> a -> Map a (Map a RegExp)
+voidTransitionMapGNFA qs q0 qf = 
+    Map.fromList (zip (Set.toList (Set.delete qf qs)) (repeat (Map.fromList (zip (Set.toList (Set.delete q0 qs)) (repeat RegExp.Void)))))
 
-convertTransitions :: Ord a => DFA a -> a -> a -> Map a (Map RegExp (Set a))
-convertTransitions d q0 qf =
-        -- converts the existing map to a map with RegExp labels and sets of result states
-    let tm = Map.map (Map.mapKeys (RegExp.Char . Set.singleton) . Map.map Set.singleton) (transitionMap d)
-        -- adds epsilon (empty RegExp) transitions from the new start state to the original start state
-        tm' = Map.insert q0 (Map.singleton RegExp.Empty (Set.singleton (startState d))) tm
-        -- adds epsilon (empty RegExp) transitions from the original accept states to the new accept state
-        tm'' = foldr (Map.adjust (Map.insertWith Set.union RegExp.Empty (Set.singleton qf))) tm' (acceptStates d)
-        -- adds Void transitions between any states that do not have an arrow connecting them
-        tm''' = Map.unionWith Map.union tm'' (emptyTransitionMapGNFA (states d) q0 qf)
+convertTransitions :: Ord a => DFA a -> a -> a -> Map a (Map a RegExp) 
+convertTransitions d q0 qf = 
+              -- inverts the keys and values of the dfa's transition map
+    let tm    = Map.map (Map.fromListWith alt . map (\(c, q) -> (q, RegExp.Char (Set.singleton c))) . Map.toList) (transitionMap d)
+              -- adds an epsilon (empty RegExp) transition from the new start state to the original start state
+        tm'   = Map.insert q0 (Map.singleton (startState d) RegExp.Empty) tm
+              -- adds epsilon (empty RegExp) transitions from the original accept states to the new accept state
+        tm''  = foldr (Map.adjust (Map.insert qf RegExp.Empty)) tm' (acceptStates d)
+              -- adds Void transitions between any states that do not have an arrow connecting them
+        tm''' = Map.unionWith Map.union tm'' (voidTransitionMapGNFA (states d) q0 qf)
     in tm'''
+
+test_convertTransitions :: Test
+test_convertTransitions =
+  "convert transitions tests"
+    ~: TestList
+      [ convertTransitions d5 6 7 ~?=
+          Map.fromList [
+              (0,Map.fromList [(0,Void),(1,RegExp.Char (Set.fromList "0")),(2,RegExp.Char (Set.fromList "1")),(3,Void),(4,Void),(5,Void)]),
+              (1,Map.fromList [(0,Void),(1,Void),(2,Void),(3,RegExp.Char (Set.fromList "0")),(4,RegExp.Char (Set.fromList "1")),(5,Void),(7,Empty)]),
+              (2,Map.fromList [(0,Void),(1,Void),(2,Void),(3,RegExp.Char (Set.fromList "1")),(4,RegExp.Char (Set.fromList "0")),(5,Void),(7,Empty)]),
+              (3,Map.fromList [(0,Void),(1,Void),(2,Void),(3,Void),(4,Void),(5,Alt (RegExp.Char (Set.fromList "1")) (RegExp.Char (Set.fromList "0")))]),
+              (4,Map.fromList [(0,Void),(1,Void),(2,Void),(3,Void),(4,Void),(5,Alt (RegExp.Char (Set.fromList "1")) (RegExp.Char (Set.fromList "0")))]),
+              (5,Map.fromList [(0,Void),(1,Void),(2,Void),(3,Void),(4,Void),(5,Alt (RegExp.Char (Set.fromList "1")) (RegExp.Char (Set.fromList "0"))),(7,Empty)]),
+              (6,Map.fromList [(0,Empty)])
+          ]
+      ]
 
 toGNFA :: DFA Int -> GNFA Int
 toGNFA d@(F qs sigma tm q0 fs) = 
@@ -83,16 +100,35 @@ toGNFA d@(F qs sigma tm q0 fs) =
 
 convert :: Ord a => GNFA a -> RegExp
 convert g
-    | Set.size (states g) == 2 = 
-        case Map.keys (transitionMap g ! startState g) of
-            [r] -> r
-            _ -> error "problem"
-    | otherwise = undefined
-    
+    -- TODO make this safe
+    | Set.size (states g) == 2 = transitionMap g ! startState g ! Set.elemAt 0 (acceptStates g)
+    | otherwise = convert g' where g' = rip g
 
+rip :: Eq a => Ord a => GNFA a -> GNFA a
+rip g = case List.find (\q -> (q /= startState g) && notElem q (acceptStates g)) (Map.keys (transitionMap g)) of
+    Just qrip -> g {states = Set.delete qrip (states g), transitionMap = ripTransitions g qrip}
+    _ -> error "problem"
 
-toRegExp :: NFA a -> RegExp
-toRegExp = undefined
+ripTransitions :: Ord a => GNFA a -> a -> Map a (Map a RegExp) 
+ripTransitions g qrip =
+    let q'    = Set.delete qrip (states g)
+        qis   = Set.delete (Set.elemAt 0 (acceptStates g)) q'
+        qjs   = Set.delete (startState g) q'
+        pairs = Set.toList (Set.cartesianProduct qis qjs)
+        tm = foldr (\(qi, qj) mp -> Map.adjust (Map.insert qj (ripRegExp g qi qj qrip)) qi mp) (transitionMap g) pairs
+     in tm
+
+ripRegExp :: Ord a => GNFA a -> a -> a -> a -> RegExp
+ripRegExp g qi qj qrip = alt (append r1 (append (RegExp.star r2) r3)) r4 
+    where
+        r1 = transitionMap g ! qi ! qrip 
+        r2 = transitionMap g ! qrip ! qrip
+        r3 = transitionMap g ! qrip ! qj
+        r4 = transitionMap g ! qi ! qj
+
+-- TODO toNFA currently has the wrong output type
+toRegExp :: NFA Int -> RegExp
+toRegExp n = undefined -- convert (toGNFA (NFADFAConv.toDFA n))
 
 d5 :: DFA Int
 d5 =
@@ -108,21 +144,6 @@ d5 =
       ss = 0
       as = Set.fromList [1, 2, 5]
    in F s a tm ss as
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

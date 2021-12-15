@@ -47,8 +47,11 @@ n2 =
 --             as' = fmap f as in
 --         F s' a' tm' ss' as'
 
-shiftStates :: Int -> NFA Int -> NFA Int
-shiftStates k nfa@(F s a tm ss as) =
+
+-- TODO abstract the common logic here
+
+shiftStatesNFA :: Int -> NFA Int -> NFA Int
+shiftStatesNFA k (F s a tm ss as) =
     let shift = (+ k)
         s' = Set.map shift s
         a' = a
@@ -57,17 +60,27 @@ shiftStates k nfa@(F s a tm ss as) =
         as' = Set.map shift as in
     F s' a' tm' ss' as'
 
-test_shiftStates :: Test
-test_shiftStates =
+shiftStatesDFA :: Int -> DFA Int -> DFA Int
+shiftStatesDFA k d@(F s a tm ss as) =
+    let shift = (+ k)
+        s' = Set.map shift s
+        a' = a
+        tm' = Map.mapKeys shift (Map.map (Map.map shift) tm)
+        ss' = shift ss
+        as' = Set.map shift as in
+    F s' a' tm' ss' as'
+
+test_shiftStatesNFA :: Test
+test_shiftStatesNFA =
   "shift states tests"
     ~: TestList
-      [ states (shiftStates 5 n1) ~?= Set.fromList [6, 7, 8, 9],
-        transitionMap (shiftStates 5 n1) ! 6 ~?= Map.fromList [(FA.Char '0', Set.singleton 6), (FA.Char '1', Set.fromList [6, 7]), (Epsilon, Set.empty)], 
-        transitionMap (shiftStates 5 n1) ! 7 ~?= Map.fromList [(FA.Char '0', Set.singleton 8), (FA.Char '1', Set.empty), (Epsilon, Set.singleton 8)], 
-        transitionMap (shiftStates 5 n1) ! 8 ~?= Map.fromList [(FA.Char '0', Set.empty), (FA.Char '1', Set.singleton 9), (Epsilon, Set.empty)],
-        transitionMap (shiftStates 5 n1) ! 9 ~?= Map.fromList [(FA.Char '0', Set.singleton 9), (FA.Char '1', Set.singleton 9), (Epsilon, Set.empty)],
-        startState (shiftStates 5 n1) ~?= 6,
-        acceptStates (shiftStates 5 n1) ~?= Set.singleton 9
+      [ states (shiftStatesNFA 5 n1) ~?= Set.fromList [6, 7, 8, 9],
+        transitionMap (shiftStatesNFA 5 n1) ! 6 ~?= Map.fromList [(FA.Char '0', Set.singleton 6), (FA.Char '1', Set.fromList [6, 7]), (Epsilon, Set.empty)], 
+        transitionMap (shiftStatesNFA 5 n1) ! 7 ~?= Map.fromList [(FA.Char '0', Set.singleton 8), (FA.Char '1', Set.empty), (Epsilon, Set.singleton 8)], 
+        transitionMap (shiftStatesNFA 5 n1) ! 8 ~?= Map.fromList [(FA.Char '0', Set.empty), (FA.Char '1', Set.singleton 9), (Epsilon, Set.empty)],
+        transitionMap (shiftStatesNFA 5 n1) ! 9 ~?= Map.fromList [(FA.Char '0', Set.singleton 9), (FA.Char '1', Set.singleton 9), (Epsilon, Set.empty)],
+        startState (shiftStatesNFA 5 n1) ~?= 6,
+        acceptStates (shiftStatesNFA 5 n1) ~?= Set.singleton 9
       ]
 
 -- TODO map totality:
@@ -76,8 +89,8 @@ test_shiftStates =
 
 union :: NFA Int -> NFA Int -> NFA Int
 union n1 n2 = 
-    let (F s1 a1 tm1 ss1 as1) = shiftStates 1 n1 -- shift the first in case it has a 0 state already
-        (F s2 a2 tm2 ss2 as2) = shiftStates (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
+    let (F s1 a1 tm1 ss1 as1) = shiftStatesNFA 1 n1 -- shift the first in case it has a 0 state already
+        (F s2 a2 tm2 ss2 as2) = shiftStatesNFA (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
         sts = Set.unions [Set.singleton ss, s1, s2]
         -- TODO the union operation may not be necessary here. need/want to enforce same alphabet anyway
         a = Set.union a1 a2 
@@ -90,7 +103,7 @@ union n1 n2 =
 
 concatenate :: NFA Int -> NFA Int -> NFA Int
 concatenate n1@(F s1 a1 tm1 ss1 as1) n2 = 
-  let F s2 a2 tm2 ss2 as2 = shiftStates (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
+  let F s2 a2 tm2 ss2 as2 = shiftStatesNFA (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
       sts = Set.union s1 s2
       a = Set.union a1 a2 -- TODO the union operation may not be necessary here. need/want to enforce same alphabet anyway
       ss = startState n1
@@ -100,7 +113,7 @@ concatenate n1@(F s1 a1 tm1 ss1 as1) n2 =
 
 star :: NFA Int -> NFA Int
 star n =
-    let F s a tm ss as = if Set.findMin (states n1) == 0 then shiftStates 1 n else n -- shift the states to accomodate new start state if necessary
+    let F s a tm ss as = if Set.findMin (states n1) == 0 then shiftStatesNFA 1 n else n -- shift the states to accomodate new start state if necessary
         s' = Set.insert ss' s
         a' = a
         -- Adds an epsilon transition from each accepting state of n to the new start state

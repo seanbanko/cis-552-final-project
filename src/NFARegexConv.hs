@@ -26,6 +26,7 @@ simplifyChar r = r
 toNFA :: RegExp -> NFA Int
 toNFA r@(RegExp.Char cset)
     | Set.size cset > 1 = toNFA (simplifyChar r) 
+    | Set.size cset == 0 = toNFA RegExp.Void
     | otherwise = 
     let s = Set.fromList [1, 2]
         a = Set.singleton (Set.elemAt 0 cset)
@@ -92,12 +93,13 @@ toGNFA d@(F qs sigma tm q0 fs) =
         tm' = generalizeTransitionMap d q0' qf'
      in F qs' sigma' tm' q0' fs'
 
--- TODO make this safe?
 convert :: Ord a => GNFA a -> RegExp
 convert g
     | Set.size (states g) == 2  = transitionMap g ! startState g ! Set.elemAt 0 (acceptStates g)
     | Set.size (states g) < 2   = error "A GNFA cannot have less than 2 states"
-    | otherwise                 = convert g' where g' = rip g
+    | otherwise                 = 
+        let g' = rip g in
+            if Set.size (states g') == Set.size (states g) then error "rip did not remove a state" else convert g' 
 
 rip :: Eq a => Ord a => GNFA a -> GNFA a
 rip g = case List.find (\q -> (q /= startState g) && notElem q (acceptStates g)) (Map.keys (transitionMap g)) of
@@ -128,15 +130,6 @@ toDFAInt d@(F qs sigma delta q0 fs) =
     let mp = Map.fromList (zip (Set.toList qs) [1..]) in
         fmapDFA (mp !) d
 
-    --     qs' = Set.map (mp !) qs
-    --     sigma' = sigma
-    --     delta' = Map.map
-    --     Map.mapKeys shift (Map.map (Map.map (Set.map shift)) tm)
-    --     q0' = mp ! q0
-    --     fs' = Set.map (mp !) fs
-    --  in F qs' sigma' tm' q0' fs'
-
-
-toRegExp :: NFA Int -> RegExp
-toRegExp n = convert (toGNFA (toDFAInt (NFADFAConv.toDFA n)))
+toRegExp :: Ord a => NFA a -> RegExp
+toRegExp = convert . toGNFA . toDFAInt . toDFA 
 

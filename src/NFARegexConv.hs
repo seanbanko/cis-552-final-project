@@ -13,6 +13,21 @@ import qualified Data.Set as Set
 import Test.HUnit
 import Data.Tuple
 
+d5 :: DFA Int
+d5 =
+  let s = Set.fromList [0, 1, 2, 3, 4, 5]
+      a = Set.fromList ['0', '1']
+      q0Map = Map.fromList [('0', 1), ('1', 2)]
+      q1Map = Map.fromList [('0', 3), ('1', 4)]
+      q2Map = Map.fromList [('0', 4), ('1', 3)]
+      q3Map = Map.fromList [('0', 5), ('1', 5)]
+      q4Map = Map.fromList [('0', 5), ('1', 5)]
+      q5Map = Map.fromList [('0', 5), ('1', 5)]
+      tm = Map.fromList [(0, q0Map), (1, q1Map), (2, q2Map), (3, q3Map), (4, q4Map), (5, q5Map)]
+      ss = 0
+      as = Set.fromList [1, 2, 5]
+   in F s a tm ss as
+
 -- creates a transition map that, for each state, maps each symbol to the empty set 
 emptyTransitionMapNFA :: Ord a => Set a -> Set Char -> Map a (Map Symbol (Set a))
 emptyTransitionMapNFA states alphabet =
@@ -72,22 +87,6 @@ convertTransitions d q0 qf =
         tm''' = Map.unionWith Map.union tm'' (voidTransitionMapGNFA (Set.unions [states d, Set.singleton q0, Set.singleton qf]) q0 qf)
     in tm'''
 
-test_convertTransitions :: Test
-test_convertTransitions =
-  "convert transitions tests"
-    ~: TestList
-      [ convertTransitions d5 6 7 ~?=
-          Map.fromList [
-              (0,Map.fromList [(0,Void),(1,RegExp.Char (Set.fromList "0")),(2,RegExp.Char (Set.fromList "1")),(3,Void),(4,Void),(5,Void)]),
-              (1,Map.fromList [(0,Void),(1,Void),(2,Void),(3,RegExp.Char (Set.fromList "0")),(4,RegExp.Char (Set.fromList "1")),(5,Void),(7,Empty)]),
-              (2,Map.fromList [(0,Void),(1,Void),(2,Void),(3,RegExp.Char (Set.fromList "1")),(4,RegExp.Char (Set.fromList "0")),(5,Void),(7,Empty)]),
-              (3,Map.fromList [(0,Void),(1,Void),(2,Void),(3,Void),(4,Void),(5,Alt (RegExp.Char (Set.fromList "1")) (RegExp.Char (Set.fromList "0")))]),
-              (4,Map.fromList [(0,Void),(1,Void),(2,Void),(3,Void),(4,Void),(5,Alt (RegExp.Char (Set.fromList "1")) (RegExp.Char (Set.fromList "0")))]),
-              (5,Map.fromList [(0,Void),(1,Void),(2,Void),(3,Void),(4,Void),(5,Alt (RegExp.Char (Set.fromList "1")) (RegExp.Char (Set.fromList "0"))),(7,Empty)]),
-              (6,Map.fromList [(0,Empty)])
-          ]
-      ]
-
 toGNFA :: DFA Int -> GNFA Int
 toGNFA d@(F qs sigma tm q0 fs) = 
     let sigma' = sigma
@@ -104,60 +103,6 @@ convert g
     | Set.size (states g) == 2  = transitionMap g ! startState g ! Set.elemAt 0 (acceptStates g)
     | Set.size (states g) < 2   = error "A GNFA cannot have less than 2 states"
     | otherwise                 = convert g' where g' = rip g
-
-test_convert :: Test
-test_convert =
-  "convert transitions tests"
-    ~: TestList
-      [ convert (toGNFA d5) ~?=
-            Alt
-                (Append 
-                    (Alt 
-                        (Append 
-                            (Alt 
-                                (Append 
-                                    (RegExp.Char (Set.fromList "1")) 
-                                    (RegExp.Char (Set.fromList "0"))
-                                ) 
-                                (Append 
-                                    (RegExp.Char (Set.fromList "0")) 
-                                    (RegExp.Char (Set.fromList "1"))
-                                )
-                            ) 
-                            (Alt 
-                                (RegExp.Char (Set.fromList "1")) 
-                                (RegExp.Char (Set.fromList "0"))
-                            )
-                        ) 
-                        (Append 
-                            (Alt 
-                                (Append 
-                                    (RegExp.Char (Set.fromList "1")) 
-                                    (RegExp.Char (Set.fromList "1"))
-                                )
-                                (Append 
-                                    (RegExp.Char (Set.fromList "0")) 
-                                    (RegExp.Char (Set.fromList "0"))
-                                )
-                            ) 
-                            (Alt 
-                                (RegExp.Char (Set.fromList "1")) 
-                                (RegExp.Char (Set.fromList "0"))
-                            )
-                        )
-                    ) 
-                    (Star 
-                        (Alt 
-                            (RegExp.Char (Set.fromList "1")) 
-                            (RegExp.Char (Set.fromList "0"))
-                        )
-                    )
-                )
-                (Alt 
-                    (RegExp.Char (Set.fromList "1")) 
-                    (RegExp.Char (Set.fromList "0"))
-                )
-      ]
 
 rip :: Eq a => Ord a => GNFA a -> GNFA a
 rip g = case List.find (\q -> (q /= startState g) && notElem q (acceptStates g)) (Map.keys (transitionMap g)) of
@@ -182,22 +127,11 @@ ripRegExp g qi qj qrip = alt (append r1 (append (RegExp.star r2) r3)) r4
         r3 = transitionMap g ! qrip ! qj
         r4 = transitionMap g ! qi ! qj
 
+
+
+
+
 -- TODO toNFA currently has the wrong output type
 toRegExp :: NFA Int -> RegExp
 toRegExp n = undefined -- convert (toGNFA (NFADFAConv.toDFA n))
-
-d5 :: DFA Int
-d5 =
-  let s = Set.fromList [0, 1, 2, 3, 4, 5]
-      a = Set.fromList ['0', '1']
-      q0Map = Map.fromList [('0', 1), ('1', 2)]
-      q1Map = Map.fromList [('0', 3), ('1', 4)]
-      q2Map = Map.fromList [('0', 4), ('1', 3)]
-      q3Map = Map.fromList [('0', 5), ('1', 5)]
-      q4Map = Map.fromList [('0', 5), ('1', 5)]
-      q5Map = Map.fromList [('0', 5), ('1', 5)]
-      tm = Map.fromList [(0, q0Map), (1, q1Map), (2, q2Map), (3, q3Map), (4, q4Map), (5, q5Map)]
-      ss = 0
-      as = Set.fromList [1, 2, 5]
-   in F s a tm ss as
 

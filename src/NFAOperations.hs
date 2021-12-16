@@ -10,16 +10,29 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Test.HUnit
 
+-- "Instance" of fmap for an NFA
+fmapNFA :: (Ord a, Ord b) => (a -> b) -> NFA a -> NFA b
+fmapNFA f (F s a tm ss as) = 
+  let s'    = Set.map f s
+      a'    = a
+      tm'   = Map.mapKeys f (Map.map (Map.map (Set.map f)) tm)
+      ss'   = f ss
+      as'   = Set.map f as
+    in F s' a' tm' ss' as'
+
+-- "Instance" of fmap for a DFA
+fmapDFA :: (Ord a, Ord b) => (a -> b) -> DFA a -> DFA b
+fmapDFA f (F s a tm ss as) = 
+  let s'    = Set.map f s
+      a'    = a
+      tm'   = Map.mapKeys f (Map.map (Map.map f) tm)
+      ss'   = f ss
+      as'   = Set.map f as
+    in F s' a' tm' ss' as'
+
 -- Renames the states of an NFA, incrementing them by k
 shiftStatesNFA :: Int -> NFA Int -> NFA Int
-shiftStatesNFA k (F s a tm ss as) =
-    let shift = (+ k)
-        s'    = Set.map shift s
-        a'    = a
-        tm'   = Map.mapKeys shift (Map.map (Map.map (Set.map shift)) tm)
-        ss'   = shift ss
-        as'   = Set.map shift as
-     in F s' a' tm' ss' as'
+shiftStatesNFA k = fmapNFA (+ k)
 
 -- Creates a transition map for an NFA that, for each state, maps each symbol to the empty set 
 emptyTransitionMapNFA :: Ord a => Set a -> Set Char -> Map a (Map Symbol (Set a))

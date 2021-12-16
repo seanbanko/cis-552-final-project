@@ -4,10 +4,7 @@ module NFARegexConvTests where
 import FA
 import Generators
 import NFADFAConv
-<<<<<<< HEAD
 import NFAOperations
-=======
->>>>>>> 79182e21614d911e14d4d1d4428717b08590200d
 import NFARegexConv
 import RegExp
 import Test.HUnit
@@ -188,7 +185,7 @@ prop_roundTripR r = toRegExp (toNFA r) %==% r
 
 -- not necessarily equal, generate the same language
 
-prop_roundTripN :: Ord a => NFA a -> Bool
+prop_roundTripN :: NFA Int -> Bool
 prop_roundTripN nfa =
   let nfa' = toNFA (toRegExp nfa)
    in equivalentDFA (toDFA nfa) (toDFA nfa')

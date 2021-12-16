@@ -22,7 +22,6 @@ simplifyChar :: RegExp -> RegExp
 simplifyChar (RegExp.Char cs) = foldr (alt . char) RegExp.Void cs
 simplifyChar r = r
 
--- Map.unionWith Map.union tm'' (voidTransitionMapGNFA (Set.unions [states d, Set.singleton q0, Set.singleton qf]) q0 qf)
 -- TODO not sure how to properly handle instantiating the transition map. does it need to be total always?
 toNFA :: RegExp -> NFA Int
 toNFA r@(RegExp.Char cset)
@@ -124,18 +123,20 @@ ripRegExp g qi qj qrip = alt (append r1 (append (RegExp.star r2) r3)) r4
         r4 = transitionMap g ! qi ! qj
 
 
--- toDFAInt :: DFA a -> DFA Int 
--- toDFAInt d@(F qs sigma tm q0 fs) = 
---     let sigma' = sigma
---         q0' = Set.findMax qs + 1
---         qf' = q0' + 1
---         fs' = Set.singleton qf'
---         qs' = Set.unions [qs, Set.singleton q0', fs']
---         tm' = convertTransitions d q0' qf'
---      in F qs' sigma' tm' q0' fs'
+toDFAInt :: Ord a => DFA (Set a) -> DFA Int 
+toDFAInt d@(F qs sigma delta q0 fs) = 
+    let mp = Map.fromList (zip (Set.toList qs) [1..]) in
+        fmapDFA (mp !) d
+
+    --     qs' = Set.map (mp !) qs
+    --     sigma' = sigma
+    --     delta' = Map.map
+    --     Map.mapKeys shift (Map.map (Map.map (Set.map shift)) tm)
+    --     q0' = mp ! q0
+    --     fs' = Set.map (mp !) fs
+    --  in F qs' sigma' tm' q0' fs'
 
 
--- TODO toNFA currently has the wrong output type
 toRegExp :: NFA Int -> RegExp
-toRegExp n = undefined -- convert (toGNFA (NFADFAConv.toDFA n))
+toRegExp n = convert (toGNFA (toDFAInt (NFADFAConv.toDFA n)))
 

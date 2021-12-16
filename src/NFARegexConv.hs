@@ -69,7 +69,7 @@ convertTransitions d q0 qf =
               -- adds epsilon (empty RegExp) transitions from the original accept states to the new accept state
         tm''  = foldr (Map.adjust (Map.insert qf RegExp.Empty)) tm' (acceptStates d)
               -- adds Void transitions between any states that do not have an arrow connecting them
-        tm''' = Map.unionWith Map.union tm'' (voidTransitionMapGNFA (states d) q0 qf)
+        tm''' = Map.unionWith Map.union tm'' (voidTransitionMapGNFA (Set.unions [states d, Set.singleton q0, Set.singleton qf]) q0 qf)
     in tm'''
 
 test_convertTransitions :: Test
@@ -121,7 +121,7 @@ ripTransitions g qrip =
      in tm'
 
 ripRegExp :: Ord a => GNFA a -> a -> a -> a -> RegExp
-ripRegExp g qi qj qrip = RegExp.Alt (RegExp.Append r1 (RegExp.Append (RegExp.Star r2) r3)) r4 
+ripRegExp g qi qj qrip = alt (append r1 (append (RegExp.star r2) r3)) r4 
     where
         r1 = transitionMap g ! qi ! qrip 
         r2 = transitionMap g ! qrip ! qrip

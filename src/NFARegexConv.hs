@@ -28,17 +28,12 @@ d5 =
       as = Set.fromList [1, 2, 5]
    in F s a tm ss as
 
--- creates a transition map that, for each state, maps each symbol to the empty set 
-emptyTransitionMapNFA :: Ord a => Set a -> Set Char -> Map a (Map Symbol (Set a))
-emptyTransitionMapNFA states alphabet =
-    Map.fromList (zip (Set.toList states) (repeat (Map.fromList (zip (Set.toList symbols) (repeat Set.empty)))))
-    where symbols = Set.insert Epsilon (Set.map FA.Char alphabet)
-
 -- smart constructor for RegExp.Char that converts Char sets to nested Alts of singletons
 char :: RegExp -> RegExp
 char (RegExp.Char cs) = foldr (alt . RegExp.Char . Set.singleton) RegExp.Void cs
 char r = r
 
+-- Map.unionWith Map.union tm'' (voidTransitionMapGNFA (Set.unions [states d, Set.singleton q0, Set.singleton qf]) q0 qf)
 -- TODO not sure how to properly handle instantiating the transition map. does it need to be total always?
 toNFA :: RegExp -> NFA Int
 toNFA r@(RegExp.Char cset)

@@ -1,4 +1,4 @@
-module NFADFAConvTests where
+module NFARegexConvTests where
 
 import NFARegexConv
 import FA
@@ -14,6 +14,74 @@ import qualified Data.Set as Set
 import Data.Tuple
 import Test.HUnit
 
+
+-- Sipser 68 Example 1.56
+a :: RegExp
+a = char 'a'
+
+-- Sipser 68 Example 1.56
+b :: RegExp
+b = char 'b'
+
+-- Sipser 68 Example 1.56
+ab :: RegExp
+ab = alt a b
+
+-- Sipser 68 Example 1.56
+abua :: RegExp
+abua = alt ab a
+
+-- Sipser 68 Example 1.56
+r56 :: RegExp
+r56 = RegExp.Star (alt (append (char 'a') (char 'b')) (char 'a'))
+
+test_toNFA :: Test
+test_toNFA =
+  "toNFA tests"
+    ~: TestList
+      [ convert (toGNFA d1) ~?= d1RegExp,
+        convert (toGNFA d2) ~?= d2RegExp,
+        convert (toGNFA d5) ~?= d5RegExp
+      ]
+
+-- Tests taken from https://www.gatevidyalay.com/dfa-to-regular-expression-examples-automata/
+
+d1 :: DFA Int
+d1 =
+  let qs = Set.fromList [0, 1]
+      sigma = Set.fromList ['0', '1']
+      q0Map = Map.fromList [('0', 1)]
+      q1Map = Map.fromList [('1', 0)]
+      tm = Map.fromList [(0, q0Map), (1, q1Map)]
+      q0 = 0
+      fs = Set.singleton 1
+   in F qs sigma tm q0 fs
+
+-- Note: This is the expected output, not necessarily the simplified RegExp!
+d1RegExp :: RegExp
+d1RegExp = append (char '0') (RegExp.star (append (char '1') (char '0')))
+
+d2 :: DFA Int
+d2 =
+  let qs = Set.fromList [1, 2, 3, 4, 5]
+      sigma = Set.fromList ['a', 'b', 'c', 'd']
+      q1Map = Map.fromList [('a', 2)]
+      q2Map = Map.fromList [('b', 4), ('c', 3), ('d', 5)]
+      q3Map = Map.empty
+      q4Map = Map.empty
+      q5Map = Map.empty
+      tm = Map.fromList [(1, q1Map), (2, q2Map), (3, q3Map), (4, q4Map), (5, q5Map)]
+      q0 = 1
+      fs = Set.fromList [3, 4, 5]
+   in F qs sigma tm q0 fs
+
+-- Note: This is the expected output, not necessarily the simplified RegExp!
+d2RegExp :: RegExp
+d2RegExp = alt (append (char 'a') (char 'd')) (alt (append (char 'a') (char 'b')) (append (char 'a') (char 'c')))
+
+d2RegExpSimplified :: RegExp
+d2RegExpSimplified = append (char 'a') (alt (char 'b') (alt (char 'c') (char 'd')))
+
 d5 :: DFA Int
 d5 =
   let s = Set.fromList [0, 1, 2, 3, 4, 5]
@@ -28,6 +96,55 @@ d5 =
       ss = 0
       as = Set.fromList [1, 2, 5]
    in F s a tm ss as
+
+d5RegExp :: RegExp
+d5RegExp = Alt
+                (Append 
+                    (Alt 
+                        (Append 
+                            (Alt 
+                                (Append 
+                                    (char '1') 
+                                    (char '0')
+                                ) 
+                                (Append 
+                                    (char '0') 
+                                    (char '1') 
+                                )
+                            ) 
+                            (Alt 
+                                (char '1') 
+                                (char '0')
+                            )
+                        ) 
+                        (Append 
+                            (Alt 
+                                (Append 
+                                  (char '1') 
+                                  (char '1')
+                                )
+                                (Append 
+                                  (char '0') 
+                                  (char '0')
+                                )
+                            ) 
+                            (Alt 
+                                  (char '1') 
+                                  (char '0')
+                            )
+                        )
+                    ) 
+                    (Star 
+                        (Alt 
+                            (char '1') 
+                            (char '0')
+                        )
+                    )
+                )
+                (Alt 
+                    (char '1') 
+                    (char '0')
+                )
 
 test_convertTransitions :: Test
 test_convertTransitions =
@@ -49,52 +166,7 @@ test_convert :: Test
 test_convert =
   "convert transitions tests"
     ~: TestList
-      [ convert (toGNFA d5) ~?=
-            Alt
-                (Append 
-                    (Alt 
-                        (Append 
-                            (Alt 
-                                (Append 
-                                    (RegExp.Char (Set.fromList "1")) 
-                                    (RegExp.Char (Set.fromList "0"))
-                                ) 
-                                (Append 
-                                    (RegExp.Char (Set.fromList "0")) 
-                                    (RegExp.Char (Set.fromList "1"))
-                                )
-                            ) 
-                            (Alt 
-                                (RegExp.Char (Set.fromList "1")) 
-                                (RegExp.Char (Set.fromList "0"))
-                            )
-                        ) 
-                        (Append 
-                            (Alt 
-                                (Append 
-                                    (RegExp.Char (Set.fromList "1")) 
-                                    (RegExp.Char (Set.fromList "1"))
-                                )
-                                (Append 
-                                    (RegExp.Char (Set.fromList "0")) 
-                                    (RegExp.Char (Set.fromList "0"))
-                                )
-                            ) 
-                            (Alt 
-                                (RegExp.Char (Set.fromList "1")) 
-                                (RegExp.Char (Set.fromList "0"))
-                            )
-                        )
-                    ) 
-                    (Star 
-                        (Alt 
-                            (RegExp.Char (Set.fromList "1")) 
-                            (RegExp.Char (Set.fromList "0"))
-                        )
-                    )
-                )
-                (Alt 
-                    (RegExp.Char (Set.fromList "1")) 
-                    (RegExp.Char (Set.fromList "0"))
-                )
+      [ convert (toGNFA d1) ~?= d1RegExp,
+        convert (toGNFA d2) ~?= d2RegExp,
+        convert (toGNFA d5) ~?= d5RegExp
       ]

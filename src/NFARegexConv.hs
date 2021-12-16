@@ -1,4 +1,4 @@
-module NFARegexConv where
+module NFARegexConvTests where
 
 import FA
 import NFADFAConv
@@ -13,31 +13,20 @@ import qualified Data.Set as Set
 import Test.HUnit
 import Data.Tuple
 
-d5 :: DFA Int
-d5 =
-  let s = Set.fromList [0, 1, 2, 3, 4, 5]
-      a = Set.fromList ['0', '1']
-      q0Map = Map.fromList [('0', 1), ('1', 2)]
-      q1Map = Map.fromList [('0', 3), ('1', 4)]
-      q2Map = Map.fromList [('0', 4), ('1', 3)]
-      q3Map = Map.fromList [('0', 5), ('1', 5)]
-      q4Map = Map.fromList [('0', 5), ('1', 5)]
-      q5Map = Map.fromList [('0', 5), ('1', 5)]
-      tm = Map.fromList [(0, q0Map), (1, q1Map), (2, q2Map), (3, q3Map), (4, q4Map), (5, q5Map)]
-      ss = 0
-      as = Set.fromList [1, 2, 5]
-   in F s a tm ss as
+-- Smart constructor for RegExp.Char for a single char
+char :: Char -> RegExp
+char = RegExp.Char . Set.singleton
 
--- smart constructor for RegExp.Char that converts Char sets to nested Alts of singletons
-char :: RegExp -> RegExp
-char (RegExp.Char cs) = foldr (alt . RegExp.Char . Set.singleton) RegExp.Void cs
-char r = r
+-- Simplifier for RegExp.Char that converts RegExp.Char sets to Alts of singletons
+simplifyChar :: RegExp -> RegExp
+simplifyChar (RegExp.Char cs) = foldr (alt . char) RegExp.Void cs
+simplifyChar r = r
 
 -- Map.unionWith Map.union tm'' (voidTransitionMapGNFA (Set.unions [states d, Set.singleton q0, Set.singleton qf]) q0 qf)
 -- TODO not sure how to properly handle instantiating the transition map. does it need to be total always?
 toNFA :: RegExp -> NFA Int
 toNFA r@(RegExp.Char cset)
-    | Set.size cset > 1 = toNFA (char r) 
+    | Set.size cset > 1 = toNFA (simplifyChar r) 
     | otherwise = 
     let s = Set.fromList [1, 2]
         a = Set.singleton (Set.elemAt 0 cset)
@@ -73,7 +62,7 @@ voidTransitionMapGNFA qs q0 qf =
 convertTransitions :: Ord a => DFA a -> a -> a -> Map a (Map a RegExp) 
 convertTransitions d q0 qf = 
               -- inverts the keys and values of the dfa's transition map
-    let tm    = Map.map (Map.fromListWith alt . map (\(c, q) -> (q, RegExp.Char (Set.singleton c))) . Map.toList) (transitionMap d)
+    let tm    = Map.map (Map.fromListWith alt . map (\(c, q) -> (q, char c)) . Map.toList) (transitionMap d)
               -- adds an epsilon (empty RegExp) transition from the new start state to the original start state
         tm'   = Map.insert q0 (Map.singleton (startState d) RegExp.Empty) tm
               -- adds epsilon (empty RegExp) transitions from the original accept states to the new accept state
@@ -123,7 +112,15 @@ ripRegExp g qi qj qrip = alt (append r1 (append (RegExp.star r2) r3)) r4
         r4 = transitionMap g ! qi ! qj
 
 
-
+-- toDFAInt :: DFA a -> DFA Int 
+-- toDFAInt d@(F qs sigma tm q0 fs) = 
+--     let sigma' = sigma
+--         q0' = Set.findMax qs + 1
+--         qf' = q0' + 1
+--         fs' = Set.singleton qf'
+--         qs' = Set.unions [qs, Set.singleton q0', fs']
+--         tm' = convertTransitions d q0' qf'
+--      in F qs' sigma' tm' q0' fs'
 
 
 -- TODO toNFA currently has the wrong output type

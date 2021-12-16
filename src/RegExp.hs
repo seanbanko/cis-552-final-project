@@ -71,7 +71,7 @@ data RegExp
   | Star RegExp -- r*, Kleene star
   | Empty -- ε, accepts empty string
   | Void -- ∅, always fails
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 {-
 Your goal will be to define the following two functions:

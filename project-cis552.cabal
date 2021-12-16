@@ -29,6 +29,7 @@ library
       FA
       Lib
       NFADFAConv
+      NFAOperations
       NFARegexConv
       RegExp
       DFAMinimizationTests

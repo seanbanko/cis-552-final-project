@@ -24,7 +24,7 @@ char :: RegExp -> RegExp
 char (RegExp.Char cs) = foldr (alt . RegExp.Char . Set.singleton) RegExp.Void cs
 char r = r
 
--- TODO not sure how to properly handle instantiating the transntion map. does it need to be total always?
+-- TODO not sure how to properly handle instantiating the transition map. does it need to be total always?
 toNFA :: RegExp -> NFA Int
 toNFA r@(RegExp.Char cset)
     | Set.size cset > 1 = toNFA (char r) 
@@ -98,12 +98,66 @@ toGNFA d@(F qs sigma tm q0 fs) =
         tm' = convertTransitions d q0' qf'
      in F qs' sigma' tm' q0' fs'
 
+-- TODO make this safe
 convert :: Ord a => GNFA a -> RegExp
 convert g
-    -- TODO make this safe
-    | Set.size (states g) == 2 = transitionMap g ! startState g ! Set.elemAt 0 (acceptStates g)
-    | Set.size (states g) < 2 = error "problem"
-    | otherwise = convert g' where g' = rip g
+    | Set.size (states g) == 2  = transitionMap g ! startState g ! Set.elemAt 0 (acceptStates g)
+    | Set.size (states g) < 2   = error "A GNFA cannot have less than 2 states"
+    | otherwise                 = convert g' where g' = rip g
+
+test_convert :: Test
+test_convert =
+  "convert transitions tests"
+    ~: TestList
+      [ convert (toGNFA d5) ~?=
+            Alt
+                (Append 
+                    (Alt 
+                        (Append 
+                            (Alt 
+                                (Append 
+                                    (RegExp.Char (Set.fromList "1")) 
+                                    (RegExp.Char (Set.fromList "0"))
+                                ) 
+                                (Append 
+                                    (RegExp.Char (Set.fromList "0")) 
+                                    (RegExp.Char (Set.fromList "1"))
+                                )
+                            ) 
+                            (Alt 
+                                (RegExp.Char (Set.fromList "1")) 
+                                (RegExp.Char (Set.fromList "0"))
+                            )
+                        ) 
+                        (Append 
+                            (Alt 
+                                (Append 
+                                    (RegExp.Char (Set.fromList "1")) 
+                                    (RegExp.Char (Set.fromList "1"))
+                                )
+                                (Append 
+                                    (RegExp.Char (Set.fromList "0")) 
+                                    (RegExp.Char (Set.fromList "0"))
+                                )
+                            ) 
+                            (Alt 
+                                (RegExp.Char (Set.fromList "1")) 
+                                (RegExp.Char (Set.fromList "0"))
+                            )
+                        )
+                    ) 
+                    (Star 
+                        (Alt 
+                            (RegExp.Char (Set.fromList "1")) 
+                            (RegExp.Char (Set.fromList "0"))
+                        )
+                    )
+                )
+                (Alt 
+                    (RegExp.Char (Set.fromList "1")) 
+                    (RegExp.Char (Set.fromList "0"))
+                )
+      ]
 
 rip :: Eq a => Ord a => GNFA a -> GNFA a
 rip g = case List.find (\q -> (q /= startState g) && notElem q (acceptStates g)) (Map.keys (transitionMap g)) of
@@ -146,7 +200,4 @@ d5 =
       ss = 0
       as = Set.fromList [1, 2, 5]
    in F s a tm ss as
-
-
-
 

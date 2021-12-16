@@ -14,6 +14,11 @@ import qualified Data.Set as Set
 import Data.Tuple
 import Test.HUnit
 
+{-
+  RegExp to NFA Conversion Tests
+  Reference: Sipser
+-}
+
 -- Sipser 68 Example 1.56
 r56 :: RegExp
 r56 = RegExp.Star (alt (append (char 'a') (char 'b')) (char 'a'))
@@ -37,13 +42,47 @@ n56 = F {
   acceptStates = Set.fromList [0,5,7]
 }
 
+-- Sipser 68 Example 1.58
+r58 :: RegExp
+r58 = append (RegExp.Star (alt (char 'a') (char 'b'))) (append (char 'a') (append (char 'b') (char 'a')))
+
+-- Expected output for r58
+n58 :: NFA Int
+n58 = F {
+  states = Set.fromList [0,1,2,3,4,5,6,7,8,9,10,11], 
+  alphabet = Set.fromList "ab", 
+  transitionMap = Map.fromList [
+    (0,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1,6])]),
+    (1,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [2,4])]),
+    (2,Map.fromList [(FA.Char 'a',Set.fromList [3]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [0,6])]),
+    (4,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [5]),(Epsilon,Set.fromList [])]),
+    (5,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [0,6])]),
+    (6,Map.fromList [(FA.Char 'a',Set.fromList [7]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (7,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [8])]),
+    (8,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [9]),(Epsilon,Set.fromList [])]),
+    (9,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [10])]),
+    (10,Map.fromList [(FA.Char 'a',Set.fromList [11]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (11,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])])
+  ], 
+  startState = 0, 
+  acceptStates = Set.fromList [11]
+}
+
 test_toNFA :: Test
 test_toNFA =
   "toNFA tests"
     ~: TestList
-      [ toNFA r56 ~?= n56 ]
+      [ toNFA r56 ~?= n56,
+        toNFA r58 ~?= n58 
+      ]
 
--- Tests taken from https://www.gatevidyalay.com/dfa-to-regular-expression-examples-automata/
+
+{-
+  NFA/DFA to RegExp Conversion Tests
+  Tests examples from https://www.gatevidyalay.com/dfa-to-regular-expression-examples-automata/
+  Note: The expected outputs are not necessarily the simplified regular expressions
+-}
 
 d1 :: DFA Int
 d1 =
@@ -56,7 +95,6 @@ d1 =
       fs = Set.singleton 1
    in F qs sigma tm q0 fs
 
--- Note: This is the expected output, not necessarily the simplified RegExp!
 d1RegExp :: RegExp
 d1RegExp = append (char '0') (RegExp.star (append (char '1') (char '0')))
 
@@ -74,7 +112,6 @@ d2 =
       fs = Set.fromList [3, 4, 5]
    in F qs sigma tm q0 fs
 
--- Note: This is the expected output, not necessarily the simplified RegExp!
 d2RegExp :: RegExp
 d2RegExp = alt (append (char 'a') (char 'd')) (alt (append (char 'a') (char 'b')) (append (char 'a') (char 'c')))
 
@@ -144,22 +181,6 @@ d5RegExp = Alt
                     (char '1') 
                     (char '0')
                 )
-
-test_convertTransitions :: Test
-test_convertTransitions =
-  "convert transitions tests"
-    ~: TestList
-      [ convertTransitions d5 6 7 ~?=
-          Map.fromList [
-              (0,Map.fromList [(0,Void),(1,RegExp.Char (Set.fromList "0")),(2,RegExp.Char (Set.fromList "1")),(3,Void),(4,Void),(5,Void)]),
-              (1,Map.fromList [(0,Void),(1,Void),(2,Void),(3,RegExp.Char (Set.fromList "0")),(4,RegExp.Char (Set.fromList "1")),(5,Void),(7,Empty)]),
-              (2,Map.fromList [(0,Void),(1,Void),(2,Void),(3,RegExp.Char (Set.fromList "1")),(4,RegExp.Char (Set.fromList "0")),(5,Void),(7,Empty)]),
-              (3,Map.fromList [(0,Void),(1,Void),(2,Void),(3,Void),(4,Void),(5,Alt (RegExp.Char (Set.fromList "1")) (RegExp.Char (Set.fromList "0")))]),
-              (4,Map.fromList [(0,Void),(1,Void),(2,Void),(3,Void),(4,Void),(5,Alt (RegExp.Char (Set.fromList "1")) (RegExp.Char (Set.fromList "0")))]),
-              (5,Map.fromList [(0,Void),(1,Void),(2,Void),(3,Void),(4,Void),(5,Alt (RegExp.Char (Set.fromList "1")) (RegExp.Char (Set.fromList "0"))),(7,Empty)]),
-              (6,Map.fromList [(0,Empty)])
-          ]
-      ]
 
 test_convert :: Test
 test_convert =

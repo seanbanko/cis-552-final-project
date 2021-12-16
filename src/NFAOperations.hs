@@ -71,27 +71,34 @@ test_shiftStatesNFA =
         acceptStates (shiftStatesNFA 5 n1) ~?= Set.singleton 9
       ]
 
--- creates a transition map that, for each state, maps each symbol to the empty set 
+-- Creates a transition map for an NFA that, for each state, maps each symbol to the empty set 
 emptyTransitionMapNFA :: Ord a => Set a -> Set Char -> Map a (Map Symbol (Set a))
 emptyTransitionMapNFA states alphabet =
     Map.fromList (zip (Set.toList states) (repeat (Map.fromList (zip (Set.toList symbols) (repeat Set.empty)))))
     where symbols = Set.insert Epsilon (Set.map FA.Char alphabet)
 
+-- Creates a copy of the transition map that contains keys and values for each state and symbol
+makeTotalTransitionMapNFA :: Ord a => Set a -> Set Char -> Map a (Map Symbol (Set a)) -> Map a (Map Symbol (Set a))
+makeTotalTransitionMapNFA qs sigma delta = Map.unionWith Map.union delta (emptyTransitionMapNFA qs sigma)
+
+-- Unions the transition maps of two NFAs, given the new states and start state
+unionTransitionMaps :: Ord a => NFA a -> NFA a -> Set a -> Set Char -> a -> Map a (Map Symbol (Set a))
+unionTransitionMaps n1 n2 qs sigma q0 =
+  let deltaUnion = Map.union (transitionMap n1) (transitionMap n2)
+      deltaWithStart = Map.insert q0 (Map.singleton Epsilon (Set.fromList [startState n1, startState n2])) deltaUnion
+      delta = makeTotalTransitionMapNFA qs sigma deltaWithStart
+   in delta
+
 union :: NFA Int -> NFA Int -> NFA Int
 union n1 n2 = 
-    let (F s1 a1 tm1 ss1 as1) = if Set.findMin (states n1) == 0 then shiftStatesNFA 1 n1 else n1 -- shift the states to accomodate new start state if necessary
-        (F s2 a2 tm2 ss2 as2) = shiftStatesNFA (Set.findMax s1 - Set.findMin (states n2) + 1) n2 
-        sts = Set.unions [Set.singleton ss, s1, s2]
-        -- TODO the union operation may not be necessary here. need/want to enforce same alphabet anyway
-        a = Set.union a1 a2 
-        -- Unions the transition functions and the adds an epsilon transition 
-        -- from the new start state to both of the original start states
-        tm = Map.insert ss (Map.singleton Epsilon (Set.fromList [ss1, ss2])) (Map.union tm1 tm2)
-        -- Map.unionWith Map.union tm'' (voidTransitionMapGNFA (Set.unions [states d, Set.singleton q0, Set.singleton qf]) q0 qf)
-        tm' = Map.unionWith Map.union tm (emptyTransitionMapNFA sts a)
-        ss = 0 
-        as = Set.union as1 as2
-     in F sts a tm' ss as
+    let n1' = if Set.findMin (states n1) == 0 then shiftStatesNFA 1 n1 else n1 
+        n2' = shiftStatesNFA (Set.findMax (states n1') - Set.findMin (states n2) + 1) n2 
+        qs = Set.unions [Set.singleton q0, states n1', states n2']
+        sigma = Set.union (alphabet n1') (alphabet n2') 
+        delta = unionTransitionMaps n1' n2' qs sigma q0 
+        q0 = 0 
+        fs = Set.union (acceptStates n1') (acceptStates n2')
+     in F qs sigma delta q0 fs
 
 concatenate :: NFA Int -> NFA Int -> NFA Int
 concatenate n1@(F s1 a1 tm1 ss1 as1) n2 = 

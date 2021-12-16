@@ -14,35 +14,34 @@ import qualified Data.Set as Set
 import Data.Tuple
 import Test.HUnit
 
-
--- Sipser 68 Example 1.56
-a :: RegExp
-a = char 'a'
-
--- Sipser 68 Example 1.56
-b :: RegExp
-b = char 'b'
-
--- Sipser 68 Example 1.56
-ab :: RegExp
-ab = alt a b
-
--- Sipser 68 Example 1.56
-abua :: RegExp
-abua = alt ab a
-
 -- Sipser 68 Example 1.56
 r56 :: RegExp
 r56 = RegExp.Star (alt (append (char 'a') (char 'b')) (char 'a'))
+
+-- Expected output for r56
+n56 :: NFA Int
+n56 = F {
+  states = Set.fromList [0,1,2,3,4,5,6,7], 
+  alphabet = Set.fromList "ab", 
+  transitionMap = Map.fromList [
+      (0,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1])]),
+      (1,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [2,6])]),
+      (2,Map.fromList [(FA.Char 'a',Set.fromList [3]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+      (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [4])]),
+      (4,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [5]),(Epsilon,Set.fromList [])]),
+      (5,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [0])]),
+      (6,Map.fromList [(FA.Char 'a',Set.fromList [7]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+      (7,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [0])])
+  ],
+  startState = 0, 
+  acceptStates = Set.fromList [0,5,7]
+}
 
 test_toNFA :: Test
 test_toNFA =
   "toNFA tests"
     ~: TestList
-      [ convert (toGNFA d1) ~?= d1RegExp,
-        convert (toGNFA d2) ~?= d2RegExp,
-        convert (toGNFA d5) ~?= d5RegExp
-      ]
+      [ toNFA r56 ~?= n56 ]
 
 -- Tests taken from https://www.gatevidyalay.com/dfa-to-regular-expression-examples-automata/
 

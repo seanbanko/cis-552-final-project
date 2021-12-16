@@ -1,4 +1,4 @@
-module NFARegexConvTests where
+module NFARegexConv where
 
 import FA
 import NFADFAConv

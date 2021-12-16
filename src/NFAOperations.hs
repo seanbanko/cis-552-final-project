@@ -106,16 +106,16 @@ concatenate n1@(F s1 a1 tm1 ss1 as1) n2 =
 
 star :: NFA Int -> NFA Int
 star n =
-    let F s a tm ss as = if Set.findMin (states n1) == 0 then shiftStatesNFA 1 n else n -- shift the states to accomodate new start state if necessary
+    let F s a tm ss as = if Set.findMin (states n) == 0 then shiftStatesNFA 1 n else n -- shift the states to accomodate new start state if necessary
         s' = Set.insert ss' s
         a' = a
         -- Adds an epsilon transition from each accepting state of n to the new start state
         -- and from the new start state to the original start state
         tm' = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton ss'))) (Map.insert ss' (Map.singleton Epsilon (Set.singleton ss)) tm) as
-        tm'' = Map.unionWith Map.union tm (emptyTransitionMapNFA s' a')
+        tm'' = Map.unionWith Map.union tm' (emptyTransitionMapNFA s' a')
         ss' = 0
         as' = Set.insert ss' as
-     in F s' a' tm' ss' as'
+     in F s' a' tm'' ss' as'
 
 test_union :: Test
 test_union =

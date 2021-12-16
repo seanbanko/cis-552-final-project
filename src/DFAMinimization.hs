@@ -48,6 +48,9 @@ canMark dfa table (s1, s2) =
 convergeTable :: Ord a => DFA a -> Map (a, a) Bool -> Map (a, a) Bool
 convergeTable dfa = until (\x -> makeMarkings dfa x == x) (makeMarkings dfa)
 
+findEquivStatePairs :: Ord a => Map (a, a) Bool -> [Set a]
+findEquivStatePairs = Map.foldrWithKey (\(s1, s2) v equivStates -> if not v then Set.fromList [s1, s2] : equivStates else equivStates) []
+
 transitiveClosure :: Ord a => [Set a] -> Set (Set a) -> Set (Set a)
 transitiveClosure [] prevTC = prevTC
 transitiveClosure (x : xs) prevTC =
@@ -58,7 +61,7 @@ transitiveClosure (x : xs) prevTC =
 newStatesMap :: Ord a => DFA a -> Map a (Set a)
 newStatesMap dfa =
   let finalTable = convergeTable dfa (initializeTable dfa)
-      equivStatePairs = Map.foldrWithKey (\(s1, s2) v setList -> if not v then Set.fromList [s1, s2] : setList else setList) [] finalTable
+      equivStatePairs = findEquivStatePairs finalTable
       tc = transitiveClosure equivStatePairs (Set.fromList equivStatePairs)
    in Set.foldr
         ( \x y ->
@@ -73,16 +76,32 @@ newStatesMap dfa =
     findEquivStates :: Ord a => a -> Set (Set a) -> Set a
     findEquivStates state equivStates = flatten $ Set.filter (Set.member state) equivStates
 
-minimizeDFA :: forall a. Ord a => DFA a -> DFA (Set a)
-minimizeDFA dfa =
-  let statesMap = newStatesMap dfa
-      s = Map.foldr Set.insert Set.empty statesMap
-      tm = Set.foldr (\x y -> Map.insert x (createCharMap dfa statesMap x) y) Map.empty s
-      ss = statesMap ! startState dfa
-      as = Map.foldrWithKey (\k v y -> if Set.member k (acceptStates dfa) then Set.insert v y else y) Set.empty statesMap
-   in F s (alphabet dfa) tm ss as
+changeStates :: Ord a => DFA a -> Map a (Set a) -> Set (Set a)
+changeStates dfa = Map.foldr Set.insert Set.empty
+
+changeStartState :: Ord a => DFA a -> Map a (Set a) -> Set a
+changeStartState dfa statesMap = statesMap ! startState dfa
+
+changeAcceptStates :: Ord a => DFA a -> Map a (Set a) -> Set (Set a)
+changeAcceptStates dfa = Map.foldrWithKey (\k v y -> if Set.member k (acceptStates dfa) then Set.insert v y else y) Set.empty
+
+changeTransitions :: Ord a => DFA a -> Map a (Set a) -> Set (Set a) -> Map (Set a) (Map Char (Set a))
+changeTransitions dfa statesMap = Set.foldr (\x y -> Map.insert x (createCharMap dfa statesMap x) y) Map.empty
   where
     newStateTransition :: Ord a => DFA a -> Map a (Set a) -> Set a -> Char -> Set a
-    newStateTransition dfa statesMap newState char = Set.foldr (\x y -> (statesMap ! transitionD dfa x char) <> y) Set.empty newState
-    createCharMap :: DFA a -> Map a (Set a) -> Set a -> Map Char (Set a)
+    newStateTransition dfa statesMap newState char =
+      case Set.toList newState of
+        [] -> Set.empty
+        (x : xs) -> statesMap ! transitionD dfa x char
+    createCharMap :: Ord a => DFA a -> Map a (Set a) -> Set a -> Map Char (Set a)
     createCharMap dfa statesMap newState = Set.foldr (\x y -> Map.insert x (newStateTransition dfa statesMap newState x) y) Map.empty (alphabet dfa)
+
+minimizeDFA :: forall a. Ord a => DFA a -> DFA (Set a)
+minimizeDFA dfa =
+  let dfa' = removeUnreachableStatesD dfa
+      statesMap = newStatesMap dfa'
+      s = changeStates dfa' statesMap
+      tm = changeTransitions dfa' statesMap s
+      ss = changeStartState dfa' statesMap
+      as = changeAcceptStates dfa' statesMap
+   in dfa' {states = s, transitionMap = tm, startState = ss, acceptStates = as}

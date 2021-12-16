@@ -102,6 +102,7 @@ convert :: Ord a => GNFA a -> RegExp
 convert g
     -- TODO make this safe
     | Set.size (states g) == 2 = transitionMap g ! startState g ! Set.elemAt 0 (acceptStates g)
+    | Set.size (states g) < 2 = error "problem"
     | otherwise = convert g' where g' = rip g
 
 rip :: Eq a => Ord a => GNFA a -> GNFA a
@@ -116,10 +117,11 @@ ripTransitions g qrip =
         qjs   = Set.delete (startState g) q'
         pairs = Set.toList (Set.cartesianProduct qis qjs)
         tm = foldr (\(qi, qj) mp -> Map.adjust (Map.insert qj (ripRegExp g qi qj qrip)) qi mp) (transitionMap g) pairs
-     in tm
+        tm' = Map.delete qrip (Map.map (Map.delete qrip) tm)
+     in tm'
 
 ripRegExp :: Ord a => GNFA a -> a -> a -> a -> RegExp
-ripRegExp g qi qj qrip = alt (append r1 (append (RegExp.star r2) r3)) r4 
+ripRegExp g qi qj qrip = RegExp.Alt (RegExp.Append r1 (RegExp.Append (RegExp.Star r2) r3)) r4 
     where
         r1 = transitionMap g ! qi ! qrip 
         r2 = transitionMap g ! qrip ! qrip

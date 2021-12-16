@@ -153,5 +153,5 @@ isVoid = undefined
 isVoid n = lanauge n == empty set
 alternatively, do the algorithm from Sipser
     do any reachability algorithm
-    if at any point the set of reachable states contains an accepting state return true
+    ef at any point the set of reachable states contains an accepting state return true
 -}

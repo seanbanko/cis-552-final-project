@@ -47,8 +47,9 @@ makeTotalTransitionMapNFA qs sigma delta = Map.unionWith Map.union delta (emptyT
 unionTransitionMaps :: Ord a => NFA a -> NFA a -> Set a -> Set Char -> a -> Map a (Map Symbol (Set a))
 unionTransitionMaps n1 n2 qs sigma q0 =
   let deltaUnion = Map.union (transitionMap n1) (transitionMap n2)
-      deltaWithEpsilons = Map.insert q0 (Map.singleton Epsilon (Set.fromList [startState n1, startState n2])) deltaUnion
-      delta = makeTotalTransitionMapNFA qs sigma deltaWithEpsilons
+      q0Map = Map.singleton Epsilon (Set.fromList [startState n1, startState n2])
+      deltaWithq0 = Map.insert q0 q0Map deltaUnion
+      delta = makeTotalTransitionMapNFA qs sigma deltaWithq0
    in delta
 
 -- Creates the union of two NFAs
@@ -63,11 +64,15 @@ union n1 n2 =
         fs = Set.union (acceptStates n1') (acceptStates n2')
      in F qs sigma delta q0 fs
 
+-- Adds epsilon transitions from *srcs* to *tgt* in the map
+addEpsilonTransitions :: Ord a => Set a -> a -> Map a (Map Symbol (Set a)) -> Map a (Map Symbol (Set a))
+addEpsilonTransitions srcs tgt delta = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton tgt))) delta srcs
+
 -- Creates a transition map for the concatenation of two NFAs, given the new states and alphabet
 concatenateTransitionMaps :: Ord a => NFA a -> NFA a -> Set a -> Set Char -> Map a (Map Symbol (Set a))
 concatenateTransitionMaps n1 n2 qs sigma = 
   let deltaUnion = Map.union (transitionMap n1) (transitionMap n2)
-      deltaWithEpsilons = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton (startState n2)))) deltaUnion (acceptStates n1)
+      deltaWithEpsilons = addEpsilonTransitions (acceptStates n1) (startState n2) deltaUnion
       delta = makeTotalTransitionMapNFA qs sigma deltaWithEpsilons
    in delta
 
@@ -85,8 +90,9 @@ concatenate n1 n2 =
 -- Creates a transition map for the star of an NFA, given the new states, alphabet, and start state
 starTransitionMap :: Ord a => NFA a -> Set a -> Set Char -> a -> Map a (Map Symbol (Set a))
 starTransitionMap n qs sigma q0 = 
-  let deltaWithStart = Map.insert q0 (Map.singleton Epsilon (Set.singleton (startState n))) (transitionMap n)
-      deltaWithEpsilons = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton (startState n)))) deltaWithStart (acceptStates n)
+  let q0Map = Map.singleton Epsilon (Set.singleton (startState n))
+      deltaWithq0 = Map.insert q0 q0Map (transitionMap n)
+      deltaWithEpsilons = addEpsilonTransitions (acceptStates n) (startState n) deltaWithq0
       delta = makeTotalTransitionMapNFA qs sigma deltaWithEpsilons
    in delta
 

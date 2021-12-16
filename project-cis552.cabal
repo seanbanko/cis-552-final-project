@@ -25,11 +25,23 @@ source-repository head
 
 library
   exposed-modules:
+      DFAMinimization
+      FA
       Lib
+      NFADFAConv
+      NFARegexConv
+      RegExp
+      DFAMinimizationTests
+      FATests
+      Generators
+      NFADFAConvTests
+      NFARegexConvTests
+      Spec
   other-modules:
       Paths_project_cis552
   hs-source-dirs:
       src
+      test
   default-extensions:
       ScopedTypeVariables
       TypeApplications
@@ -92,6 +104,11 @@ test-suite project-cis552-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      DFAMinimizationTests
+      FATests
+      Generators
+      NFADFAConvTests
+      NFARegexConvTests
       Paths_project_cis552
   hs-source-dirs:
       test

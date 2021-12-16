@@ -86,7 +86,7 @@ concatenate n1 n2 =
 starTransitionMap :: Ord a => NFA a -> Set a -> Set Char -> a -> Map a (Map Symbol (Set a))
 starTransitionMap n qs sigma q0 = 
   let deltaWithStart = Map.insert q0 (Map.singleton Epsilon (Set.singleton (startState n))) (transitionMap n)
-      deltaWithEpsilons = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton q0))) deltaWithStart (acceptStates n)
+      deltaWithEpsilons = foldr (Map.adjust (Map.insertWith Set.union Epsilon (Set.singleton (startState n)))) deltaWithStart (acceptStates n)
       delta = makeTotalTransitionMapNFA qs sigma deltaWithEpsilons
    in delta
 

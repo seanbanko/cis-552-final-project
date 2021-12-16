@@ -31,15 +31,15 @@ n56 = F {
   states = Set.fromList [0,1,2,3,4,5,6,7], 
   alphabet = Set.fromList "ab", 
   transitionMap = Map.fromList [
-      (0,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1])]),
-      (1,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [2,6])]),
-      (2,Map.fromList [(FA.Char 'a',Set.fromList [3]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
-      (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [4])]),
-      (4,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [5]),(Epsilon,Set.fromList [])]),
-      (5,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [0])]),
-      (6,Map.fromList [(FA.Char 'a',Set.fromList [7]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
-      (7,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [0])])
-  ],
+    (0,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1])]),
+    (1,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [2,6])]),
+    (2,Map.fromList [(FA.Char 'a',Set.fromList [3]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [4])]),
+    (4,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [5]),(Epsilon,Set.fromList [])]),
+    (5,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1])]),
+    (6,Map.fromList [(FA.Char 'a',Set.fromList [7]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (7,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1])])
+    ],
   startState = 0, 
   acceptStates = Set.fromList [0,5,7]
 }
@@ -57,9 +57,9 @@ n58 = F {
     (0,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1,6])]),
     (1,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [2,4])]),
     (2,Map.fromList [(FA.Char 'a',Set.fromList [3]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
-    (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [0,6])]),
+    (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1,6])]),
     (4,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [5]),(Epsilon,Set.fromList [])]),
-    (5,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [0,6])]),
+    (5,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1,6])]),
     (6,Map.fromList [(FA.Char 'a',Set.fromList [7]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
     (7,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [8])]),
     (8,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [9]),(Epsilon,Set.fromList [])]),

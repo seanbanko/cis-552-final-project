@@ -1,3 +1,5 @@
+module Spec where
+
 import Test.HUnit
 import Test.QuickCheck
 

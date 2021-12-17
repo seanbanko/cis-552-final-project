@@ -185,11 +185,9 @@ prop_roundTripR :: RegExp -> Property
 prop_roundTripR r = toRegExp (toNFA r) %==% r
 
 -- prop_roundTripN :: NFA Int -> Property
--- prop_roundTripN n = within 5000000 $
---   let n' = toNFA (toRegExp n) in 
---     case genString' n' of
---       Just g -> forAll g $ \s -> classify (acceptN n s) "accepting" $ acceptN n s == acceptN n' s
---       Nothing -> property $ null (alphabet n')
+-- prop_roundTripN n =  within 5000000 $
+--     let n' = toNFA (toRegExp n)
+--      in forAll (genString n') $ \s -> classify (acceptN n' s) "accepting" $ acceptN n s == acceptN n' s
 
 runTests :: IO ()
 runTests = do

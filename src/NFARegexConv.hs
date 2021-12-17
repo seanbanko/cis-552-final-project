@@ -22,7 +22,6 @@ simplifyChar :: RegExp -> RegExp
 simplifyChar (RegExp.Char cs) = foldr (alt . char) RegExp.Void cs
 simplifyChar r = r
 
--- TODO not sure how to properly handle instantiating the transition map. does it need to be total always?
 toNFA :: RegExp -> NFA Int
 toNFA r@(RegExp.Char cset)
     | Set.size cset > 1 = toNFA (simplifyChar r) 

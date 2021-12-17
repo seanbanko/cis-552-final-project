@@ -18,7 +18,7 @@ genStates :: forall a. (Ord a, Arbitrary a) => Gen (Set a)
 genStates = Set.fromList <$> listOf1 (arbitrary :: Gen a)
 
 genAlphabet :: Gen (Set Char)
-genAlphabet = Set.fromList <$> listOf1 (arbitrary :: Gen Char)
+genAlphabet = elements (Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c'])))
 
 genSubset :: Set a -> Gen (Set a)
 genSubset set = elements (Set.toList (Set.powerSet set))

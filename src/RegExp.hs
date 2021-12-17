@@ -381,7 +381,7 @@ Make sure that you also implement the 'shrink' function too.
 -}
 
 defaultCharSet :: [Set Char]
-defaultCharSet = Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c', 'd']))
+defaultCharSet = Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c']))
 
 instance Arbitrary RegExp where
   arbitrary =

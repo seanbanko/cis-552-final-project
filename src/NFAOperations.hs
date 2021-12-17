@@ -56,12 +56,12 @@ unionTransitionMaps n1 n2 qs sigma q0 =
 -- Creates the union of two NFAs
 union :: NFA Int -> NFA Int -> NFA Int
 union n1 n2 = 
-    let n1'   = if Set.findMin (states n1) == 0 then shiftStatesNFA 1 n1 else n1 
+    let n1'   = n1 
         n2'   = shiftStatesNFA (Set.findMax (states n1') - Set.findMin (states n2) + 1) n2 
         qs    = Set.unions [Set.singleton q0, states n1', states n2']
         sigma = Set.union (alphabet n1') (alphabet n2')
         delta = unionTransitionMaps n1' n2' qs sigma q0 
-        q0    = 0 
+        q0    = max (Set.findMax (states n1')) (Set.findMax (states n2')) + 1 
         fs    = Set.union (acceptStates n1') (acceptStates n2')
      in F qs sigma delta q0 fs
 
@@ -100,10 +100,9 @@ starTransitionMap n qs sigma q0 =
 -- Creates the star NFA
 star :: NFA Int -> NFA Int
 star n =
-    let n'    = if Set.findMin (states n) == 0 then shiftStatesNFA 1 n else n
-        qs    = Set.insert q0 (states n')
+    let qs    = Set.insert q0 (states n)
         sigma = alphabet n
-        delta = starTransitionMap n' qs sigma q0
-        q0    = 0
-        fs    = Set.insert q0 (acceptStates n')
+        delta = starTransitionMap n qs sigma q0
+        q0    = Set.findMax (states n) + 1
+        fs    = Set.insert q0 (acceptStates n)
      in F qs sigma delta q0 fs

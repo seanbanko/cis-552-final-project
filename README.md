@@ -1,8 +1,8 @@
 # Finite Automata and Regular Expression Library
-Names: Rahul Chandran, Sean Banko
+Names: Rahul Chandran, Sean Banko\
 Pennkeys: rahulrc, sbanko
 
-This library allows you to create perform operations on NFAs, DFAs, and regular expressions.
+This library allows you to perform operations on NFAs, DFAs, and regular expressions.
 We have implemented an NFA to DFA conversion algorithm, a DFA minimization algorithm, a regular expression
 to NFA conversion algorithm, and an NFA to regular expression conversion algorithm. 
 
@@ -20,12 +20,10 @@ for DFA minimization.
 
 
 The `test` folder contains all the `.hs` files that test our algorithms. It also 
-includes `Generators.hs` which has the generators for DFAs and NFAs and the generator
-for a string given an DFA or an NFA.
+includes `Generators.hs` which has the generators for DFAs and NFAs.
 
 This project compiles with `stack build`. 
 
-You can run the main executable with `stack run`.
-You can run the tests with `stack test`. 
+You can run the tests with `stack run`. 
 
 Lastly, you can start a REPL with `stack ghci`.

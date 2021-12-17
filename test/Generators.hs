@@ -127,5 +127,5 @@ genString fa = listOf (elements (Set.toList (alphabet fa)))
 
 runTests :: IO ()
 runTests = do
-  quickCheck (prop_ValidNFA :: NFA Int -> Bool)
-  quickCheck (prop_ValidDFA :: DFA Int -> Bool)
+  quickCheckN 1000 (prop_ValidNFA :: NFA Int -> Bool)
+  quickCheckN 1000 (prop_ValidDFA :: DFA Int -> Bool)

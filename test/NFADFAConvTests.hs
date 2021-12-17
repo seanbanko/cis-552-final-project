@@ -12,7 +12,6 @@ import NFADFAConv
 import Test.HUnit
 import Test.QuickCheck
 
-
 d1 :: DFA (Set Int)
 d1 = toDFA n1
 
@@ -72,5 +71,5 @@ runTests = do
     runTestTT $
       TestList
         [test_toDFA]
-  quickCheck (prop_equivalent :: NFA Int -> Property)
-  quickCheck (prop_isDFA :: NFA Int -> Bool)
+  quickCheckN 1000 (prop_equivalent :: NFA Int -> Property)
+  quickCheckN 1000 (prop_isDFA :: NFA Int -> Bool)

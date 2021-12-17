@@ -59,28 +59,24 @@ test_minimizeDFA =
         minimizeDFA d7 ~?= d7'
       ]
 
-prop_equivalent :: Ord a => NFA a -> Property
-prop_equivalent nfa =
-  let dfa = toDFA nfa
-      minDfa = minimizeDFA dfa
+prop_equivalent :: Ord a => DFA a -> Property
+prop_equivalent dfa =
+  let minDfa = minimizeDFA dfa
    in classify (Set.size (states minDfa) < Set.size (states dfa)) "non-trivial" $ equivalentDFA dfa minDfa
 
-prop_isDFA :: Ord a => NFA a -> Property
-prop_isDFA nfa =
-  let dfa = toDFA nfa
-      minDfa = minimizeDFA dfa
+prop_isDFA :: Ord a => DFA a -> Property
+prop_isDFA dfa =
+  let minDfa = minimizeDFA dfa
    in classify (Set.size (states minDfa) < Set.size (states dfa)) "non-trivial" $ prop_ValidDFA dfa
 
-prop_isSmaller :: Ord a => NFA a -> Property
-prop_isSmaller nfa =
-  let dfa = toDFA nfa
-      minDfa = minimizeDFA dfa
+prop_isSmaller :: Ord a => DFA a -> Property
+prop_isSmaller dfa =
+  let minDfa = minimizeDFA dfa
    in classify (Set.size (states minDfa) < Set.size (states dfa)) "non-trivial" $ Set.size (states minDfa) <= Set.size (states dfa)
 
-prop_isMinimal :: Ord a => NFA a -> Property
-prop_isMinimal nfa =
-  let dfa = toDFA nfa
-      minDfa = minimizeDFA dfa
+prop_isMinimal :: Ord a => DFA a -> Property
+prop_isMinimal dfa =
+  let minDfa = minimizeDFA dfa
       minDfa' = minimizeDFA minDfa
    in classify (Set.size (states minDfa) < Set.size (states dfa)) "non-trivial" $ Set.size (states minDfa) == Set.size (states minDfa')
 
@@ -90,7 +86,7 @@ runTests = do
     runTestTT $
       TestList
         [test_minimizeDFA]
-  quickCheck (prop_equivalent :: NFA Int -> Property)
-  quickCheck (prop_isDFA :: NFA Int -> Property)
-  quickCheck (prop_isSmaller :: NFA Int -> Property)
-  quickCheck (prop_isMinimal :: NFA Int -> Property) 
+  quickCheckN 1000 (prop_equivalent :: DFA Int -> Property)
+  quickCheckN 1000 (prop_isDFA :: DFA Int -> Property)
+  quickCheckN 1000 (prop_isSmaller :: DFA Int -> Property)
+  quickCheckN 1000 (prop_isMinimal :: DFA Int -> Property)

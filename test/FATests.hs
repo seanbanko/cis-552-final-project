@@ -5,10 +5,10 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 import FA
-import NFAOperations
-import NFADFAConv
-import NFARegexConv
 import Generators
+import NFADFAConv
+import NFAOperations
+import NFARegexConv
 import Test.HUnit
 import Test.QuickCheck
 
@@ -173,6 +173,6 @@ runTests = do
     runTestTT $
       TestList
         [test_stringTransitionN, test_acceptN]
-  quickCheck (prop_dfaEquivIdentity :: DFA Int -> Bool)
-  quickCheck (prop_dfaEquivNot :: DFA Int -> Bool)
-  quickCheck (prop_dfaEquivIntersection :: DFA Int -> Bool) 
+  quickCheckN 1000 (prop_dfaEquivIdentity :: DFA Int -> Bool)
+  quickCheckN 1000 (prop_dfaEquivNot :: DFA Int -> Bool)
+  quickCheckN 1000 (prop_dfaEquivIntersection :: DFA Int -> Bool)

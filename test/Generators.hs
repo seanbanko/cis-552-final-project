@@ -8,37 +8,37 @@ import FA
 import NFADFAConv
 import Test.QuickCheck
 
-genStates :: Gen (Set Int)
-genStates = Set.fromList <$> f arbitrary 
+genStates :: forall a. (Ord a, Arbitrary a) => Gen (Set a)
+genStates = Set.fromList <$> f (arbitrary :: Gen a)
 
 f :: Gen a -> Gen [a]
-f gen = sized $ \_ -> do 
-  k <- choose (1, 10) 
+f gen = sized $ \_ -> do
+  k <- choose (1, 10)
   vectorOf k gen
 
 genAlphabet :: Gen (Set Char)
-genAlphabet = elements (Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c', 'd'])))
+genAlphabet = elements (Set.toList (Set.delete Set.empty (Set.powerSet (Set.fromList ['a', 'b', 'c', 'd']))))
 
-genSubset :: Set Int -> Gen (Set Int)
+genSubset :: Set a -> Gen (Set a)
 genSubset set = elements (Set.toList (Set.powerSet set))
 
-genStartState :: Set Int -> Gen Int
-genStartState states = do
+genState :: Set a -> Gen a
+genState states = do
   i <- chooseInt (0, Set.size states - 1)
   return $ Set.elemAt i states
 
-instance Arbitrary (NFA Int) where
-  arbitrary :: Gen (NFA Int)
+instance (Arbitrary a, Ord a) => Arbitrary (NFA a) where
+  arbitrary :: Gen (NFA a)
   arbitrary =
     do
       s <- genStates
       a <- genAlphabet
       tm <- genTransitionMapN s a
-      ss <- genStartState s
+      ss <- genState s
       as <- genSubset s
       return $ F s a tm ss as
     where
-      genSymbolMap :: Int -> Set Int -> Set Char -> Gen (Map Symbol (Set Int))
+      genSymbolMap :: a -> Set a -> Set Char -> Gen (Map Symbol (Set a))
       genSymbolMap state states alphabet =
         let symbols = Set.insert Epsilon (Set.map Char alphabet)
             gens = Set.foldr (\x y -> genSubset states : y) [] symbols
@@ -47,42 +47,41 @@ instance Arbitrary (NFA Int) where
           f :: Set Symbol -> [Set a] -> Map Symbol (Set a)
           f symbols stateSubsets = Map.fromList (zip (Set.toList symbols) stateSubsets)
 
-      genTransitionMapN :: Set Int -> Set Char -> Gen (Map Int (Map Symbol (Set Int)))
+      genTransitionMapN :: Set a -> Set Char -> Gen (Map a (Map Symbol (Set a)))
       genTransitionMapN states alphabet =
         let gens = Set.foldr (\x y -> genSymbolMap x states alphabet : y) [] states
          in f states <$> sequence gens
         where
-          f :: Set Int -> [Map Symbol (Set Int)] -> Map Int (Map Symbol (Set Int))
+          f :: Set a -> [Map Symbol (Set a)] -> Map a (Map Symbol (Set a))
           f states maps = Map.fromList (zip (Set.toList states) maps)
 
-instance Arbitrary (DFA Int) where
-  arbitrary :: Gen (DFA Int)
+instance (Arbitrary a, Ord a) => Arbitrary (DFA a) where
+  arbitrary :: Gen (DFA a)
   arbitrary =
     do
       s <- genStates
       a <- genAlphabet
       tm <- genTransitionMapD s a
-      ss <- genStartState s
+      ss <- genState s
       as <- genSubset s
       return $ F s a tm ss as
     where
-      genCharMap :: Int -> Set Int -> Set Char -> Gen (Map Char Int)
+      genCharMap :: a -> Set a -> Set Char -> Gen (Map Char a)
       genCharMap state states alphabet =
-        let gens = Set.foldr (\x y -> (arbitrary :: Gen Int) : y) [] alphabet
+        let gens = Set.foldr (\x y -> genState states : y) [] alphabet
          in f alphabet <$> sequence gens
         where
-          f :: Set Char -> [Int] -> Map Char Int
+          f :: Set Char -> [a] -> Map Char a
           f alphabet randomStates = Map.fromList (zip (Set.toList alphabet) randomStates)
 
-      genTransitionMapD :: Set Int -> Set Char -> Gen (Map Int (Map Char Int))
+      genTransitionMapD :: Set a -> Set Char -> Gen (Map a (Map Char a))
       genTransitionMapD states alphabet =
         let gens = Set.foldr (\x y -> genCharMap x states alphabet : y) [] states
          in f states <$> sequence gens
         where
-          f :: Set Int -> [Map Char Int] -> Map Int (Map Char Int)
+          f :: Set a -> [Map Char a] -> Map a (Map Char a)
           f states maps = Map.fromList (zip (Set.toList states) maps)
 
--- Returns true iff the NFA nfa satisfies all validity properties
 prop_ValidNFA :: Ord a => NFA a -> Bool
 prop_ValidNFA nfa =
   let s = states nfa
@@ -122,7 +121,7 @@ genString :: FA a s -> Gen String
 genString fa = listOf (elements (Set.toList (alphabet fa)))
 
 -- genString' :: FA a s -> Maybe (Gen String)
--- genString' fa 
+-- genString' fa
 --   | null (alphabet fa) = Nothing
 --   | otherwise = Just $ listOf (elements (Set.toList (alphabet fa)))
 

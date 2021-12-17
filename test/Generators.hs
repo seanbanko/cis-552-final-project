@@ -118,12 +118,9 @@ quickCheckN :: (Testable prop) => Int -> prop -> IO ()
 quickCheckN n = quickCheck . withMaxSuccess n
 
 genString :: FA a s -> Gen String
-genString fa = listOf (elements (Set.toList (alphabet fa)))
-
--- genString' :: FA a s -> Maybe (Gen String)
--- genString' fa
---   | null (alphabet fa) = Nothing
---   | otherwise = Just $ listOf (elements (Set.toList (alphabet fa)))
+genString fa
+  | null (alphabet fa) = return ""
+  | otherwise = listOf (elements (Set.toList (alphabet fa)))
 
 runTests :: IO ()
 runTests = do

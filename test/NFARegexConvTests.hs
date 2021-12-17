@@ -175,11 +175,13 @@ test_convert :: Test
 test_convert =
   "convert tests"
     ~: TestList
-      [ convert (toGNFA d1) ~?= d1RegExp,
-        convert (toGNFA d2) ~?= d2RegExp,
-        convert (toGNFA d5) ~?= d5RegExp
+      [ convert (toGNFADFA d1) ~?= d1RegExp,
+        convert (toGNFADFA d2) ~?= d2RegExp,
+        convert (toGNFADFA d5) ~?= d5RegExp
       ]
 
+bad :: RegExp
+bad = Alt (Star (Alt (Alt (RegExp.Char (Set.fromList "d")) Empty) (Append (Alt (Alt (RegExp.Char (Set.fromList "abd")) (RegExp.Char (Set.fromList "c"))) Empty) (RegExp.Char (Set.fromList "ad"))))) (RegExp.Char (Set.fromList "a"))
 
 prop_testToRegExp :: Ord a => NFA a -> Bool
 prop_testToRegExp n = let r = toRegExp n in not (RegExp.accept r "cis552")

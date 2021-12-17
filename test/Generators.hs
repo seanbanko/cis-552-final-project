@@ -8,22 +8,27 @@ import FA
 import NFADFAConv
 import Test.QuickCheck
 
-genStates :: forall a. (Ord a, Arbitrary a) => Gen (Set a)
-genStates = Set.fromList <$> listOf1 (arbitrary :: Gen a)
+genStates :: Gen (Set Int)
+genStates = Set.fromList <$> f arbitrary 
+
+f :: Gen a -> Gen [a]
+f gen = sized $ \_ -> do 
+  k <- choose (1, 10) 
+  vectorOf k gen
 
 genAlphabet :: Gen (Set Char)
 genAlphabet = elements (Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c', 'd'])))
 
-genSubset :: Set a -> Gen (Set a)
+genSubset :: Set Int -> Gen (Set Int)
 genSubset set = elements (Set.toList (Set.powerSet set))
 
-genStartState :: Set a -> Gen a
+genStartState :: Set Int -> Gen Int
 genStartState states = do
   i <- chooseInt (0, Set.size states - 1)
   return $ Set.elemAt i states
 
-instance (Arbitrary a, Ord a) => Arbitrary (NFA a) where
-  arbitrary :: Gen (NFA a)
+instance Arbitrary (NFA Int) where
+  arbitrary :: Gen (NFA Int)
   arbitrary =
     do
       s <- genStates
@@ -33,7 +38,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (NFA a) where
       as <- genSubset s
       return $ F s a tm ss as
     where
-      genSymbolMap :: a -> Set a -> Set Char -> Gen (Map Symbol (Set a))
+      genSymbolMap :: Int -> Set Int -> Set Char -> Gen (Map Symbol (Set Int))
       genSymbolMap state states alphabet =
         let symbols = Set.insert Epsilon (Set.map Char alphabet)
             gens = Set.foldr (\x y -> genSubset states : y) [] symbols
@@ -42,16 +47,16 @@ instance (Arbitrary a, Ord a) => Arbitrary (NFA a) where
           f :: Set Symbol -> [Set a] -> Map Symbol (Set a)
           f symbols stateSubsets = Map.fromList (zip (Set.toList symbols) stateSubsets)
 
-      genTransitionMapN :: Set a -> Set Char -> Gen (Map a (Map Symbol (Set a)))
+      genTransitionMapN :: Set Int -> Set Char -> Gen (Map Int (Map Symbol (Set Int)))
       genTransitionMapN states alphabet =
         let gens = Set.foldr (\x y -> genSymbolMap x states alphabet : y) [] states
          in f states <$> sequence gens
         where
-          f :: Set a -> [Map Symbol (Set a)] -> Map a (Map Symbol (Set a))
+          f :: Set Int -> [Map Symbol (Set Int)] -> Map Int (Map Symbol (Set Int))
           f states maps = Map.fromList (zip (Set.toList states) maps)
 
-instance (Arbitrary a, Ord a) => Arbitrary (DFA a) where
-  arbitrary :: Gen (DFA a)
+instance Arbitrary (DFA Int) where
+  arbitrary :: Gen (DFA Int)
   arbitrary =
     do
       s <- genStates
@@ -61,20 +66,20 @@ instance (Arbitrary a, Ord a) => Arbitrary (DFA a) where
       as <- genSubset s
       return $ F s a tm ss as
     where
-      genCharMap :: a -> Set a -> Set Char -> Gen (Map Char a)
+      genCharMap :: Int -> Set Int -> Set Char -> Gen (Map Char Int)
       genCharMap state states alphabet =
-        let gens = Set.foldr (\x y -> (arbitrary :: Gen a) : y) [] alphabet
+        let gens = Set.foldr (\x y -> (arbitrary :: Gen Int) : y) [] alphabet
          in f alphabet <$> sequence gens
         where
-          f :: Set Char -> [a] -> Map Char a
+          f :: Set Char -> [Int] -> Map Char Int
           f alphabet randomStates = Map.fromList (zip (Set.toList alphabet) randomStates)
 
-      genTransitionMapD :: Set a -> Set Char -> Gen (Map a (Map Char a))
+      genTransitionMapD :: Set Int -> Set Char -> Gen (Map Int (Map Char Int))
       genTransitionMapD states alphabet =
         let gens = Set.foldr (\x y -> genCharMap x states alphabet : y) [] states
          in f states <$> sequence gens
         where
-          f :: Set a -> [Map Char a] -> Map a (Map Char a)
+          f :: Set Int -> [Map Char Int] -> Map Int (Map Char Int)
           f states maps = Map.fromList (zip (Set.toList states) maps)
 
 -- Returns true iff the NFA nfa satisfies all validity properties
@@ -120,3 +125,8 @@ genString fa = listOf (elements (Set.toList (alphabet fa)))
 -- genString' fa 
 --   | null (alphabet fa) = Nothing
 --   | otherwise = Just $ listOf (elements (Set.toList (alphabet fa)))
+
+runTests :: IO ()
+runTests = do
+  quickCheck (prop_ValidNFA :: NFA Int -> Bool)
+  quickCheck (prop_ValidDFA :: DFA Int -> Bool)

@@ -83,3 +83,14 @@ prop_isMinimal nfa =
       minDfa = minimizeDFA dfa
       minDfa' = minimizeDFA minDfa
    in classify (Set.size (states minDfa) < Set.size (states dfa)) "non-trivial" $ Set.size (states minDfa) == Set.size (states minDfa')
+
+runTests :: IO ()
+runTests = do
+  _ <-
+    runTestTT $
+      TestList
+        [test_minimizeDFA]
+  quickCheck (prop_equivalent :: NFA Int -> Property)
+  quickCheck (prop_isDFA :: NFA Int -> Property)
+  quickCheck (prop_isSmaller :: NFA Int -> Property)
+  quickCheck (prop_isMinimal :: NFA Int -> Property) 

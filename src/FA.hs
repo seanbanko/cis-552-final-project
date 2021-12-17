@@ -146,16 +146,17 @@ notDFA dfa =
 -- This function requires that the alphabet d1 = alphabet d2.
 intersectionDFA :: forall a b. (Ord a, Ord b) => DFA a -> DFA b -> DFA (a, b)
 intersectionDFA dfa1 dfa2 =
-  let s = Set.cartesianProduct (states dfa1) (states dfa2)
-      a = Set.intersection (alphabet dfa1) (alphabet dfa2)
-      tm = changeTransitions dfa1 dfa2 s
-      ss = (startState dfa1, startState dfa2)
-      as = Set.cartesianProduct (acceptStates dfa1) (acceptStates dfa2)
-  in F s a tm ss as
+  if alphabet dfa1 == alphabet dfa2
+    then
+      let s = Set.cartesianProduct (states dfa1) (states dfa2)
+          tm = changeTransitions dfa1 dfa2 s
+          ss = (startState dfa1, startState dfa2)
+          as = Set.cartesianProduct (acceptStates dfa1) (acceptStates dfa2)
+       in F s (alphabet dfa1) tm ss as
+    else error "DFA's have different alphabets"
   where
     changeTransitions :: DFA a -> DFA b -> Set (a, b) -> Map (a, b) (Map Char (a, b))
-    changeTransitions dfa1 dfa2 newStates = 
-      Set.foldr (\x y -> Map.insert x (createCharMap dfa1 dfa2 x (Set.intersection (alphabet dfa1) (alphabet dfa2))) y) Map.empty newStates
+    changeTransitions dfa1 dfa2 newStates = Set.foldr (\x y -> Map.insert x (createCharMap dfa1 dfa2 x (alphabet dfa1)) y) Map.empty newStates
     createCharMap :: DFA a -> DFA b -> (a, b) -> Set Char -> Map Char (a, b)
     createCharMap dfa1 dfa2 (s1, s2) = Set.foldr (\x y -> Map.insert x (newStateTransition dfa1 dfa2 (s1, s2) x) y) Map.empty
     newStateTransition :: DFA a -> DFA b -> (a, b) -> Char -> (a, b)

@@ -166,3 +166,13 @@ prop_dfaEquivNot dfa = not $ equivalentDFA dfa (notDFA dfa)
 
 prop_dfaEquivIntersection :: Ord a => DFA a -> Bool
 prop_dfaEquivIntersection dfa = equivalentDFA dfa (intersectionDFA dfa dfa)
+
+runTests :: IO ()
+runTests = do
+  _ <-
+    runTestTT $
+      TestList
+        [test_stringTransitionN, test_acceptN]
+  quickCheck (prop_dfaEquivIdentity :: DFA Int -> Bool)
+  quickCheck (prop_dfaEquivNot :: DFA Int -> Bool)
+  quickCheck (prop_dfaEquivIntersection :: DFA Int -> Bool) 

@@ -28,22 +28,22 @@ r56 = RegExp.Star (alt (append (char 'a') (char 'b')) (char 'a'))
 -- Expected output for r56
 n56 :: NFA Int
 n56 = F {
-  states = Set.fromList [0,1,2,3,4,5,6,7], 
+  states = Set.fromList [1,2,3,4,5,6,7,8], 
   alphabet = Set.fromList "ab", 
   transitionMap = Map.fromList [
-    (0,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1])]),
-    (1,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [2,6])]),
-    (2,Map.fromList [(FA.Char 'a',Set.fromList [3]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
-    (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [4])]),
-    (4,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [5]),(Epsilon,Set.fromList [])]),
-    (5,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1])]),
-    (6,Map.fromList [(FA.Char 'a',Set.fromList [7]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
-    (7,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1])])
-    ],
-  startState = 0, 
-  acceptStates = Set.fromList [0,5,7]
-}
-
+    (1,Map.fromList [(FA.Char 'a',Set.fromList [2]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (2,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [3])]),
+    (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [4]),(Epsilon,Set.fromList [])]),
+    (4,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [7])]),
+    (5,Map.fromList [(FA.Char 'a',Set.fromList [6]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (6,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [7])]),
+    (7,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1,5])]),
+    (8,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [7])])
+    ], 
+    startState = 8, 
+    acceptStates = Set.fromList [4,6,8]
+  }
+  
 -- Sipser 68 Example 1.58
 r58 :: RegExp
 r58 = append (RegExp.Star (alt (char 'a') (char 'b'))) (append (char 'a') (append (char 'b') (char 'a')))
@@ -51,25 +51,26 @@ r58 = append (RegExp.Star (alt (char 'a') (char 'b'))) (append (char 'a') (appen
 -- Expected output for r58
 n58 :: NFA Int
 n58 = F {
-  states = Set.fromList [0,1,2,3,4,5,6,7,8,9,10,11], 
+  states = Set.fromList [1,2,3,4,5,6,7,8,9,10,11,12], 
   alphabet = Set.fromList "ab", 
   transitionMap = Map.fromList [
-    (0,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1,6])]),
-    (1,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [2,4])]),
-    (2,Map.fromList [(FA.Char 'a',Set.fromList [3]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
-    (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1,6])]),
-    (4,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [5]),(Epsilon,Set.fromList [])]),
-    (5,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1,6])]),
-    (6,Map.fromList [(FA.Char 'a',Set.fromList [7]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
-    (7,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [8])]),
-    (8,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [9]),(Epsilon,Set.fromList [])]),
-    (9,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [10])]),
-    (10,Map.fromList [(FA.Char 'a',Set.fromList [11]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
-    (11,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])])
+    (1,Map.fromList [(FA.Char 'a',Set.fromList [2]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (2,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [5,7])]),
+    (3,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [4]),(Epsilon,Set.fromList [])]),
+    (4,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [5,7])]),
+    (5,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [1,3])]),
+    (6,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [5,7])]),
+    (7,Map.fromList [(FA.Char 'a',Set.fromList [8]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (8,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [9])]),
+    (9,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList [10]),(Epsilon,Set.fromList [])]),
+    (10,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [11])]),
+    (11,Map.fromList [(FA.Char 'a',Set.fromList [12]),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])]),
+    (12,Map.fromList [(FA.Char 'a',Set.fromList []),(FA.Char 'b',Set.fromList []),(Epsilon,Set.fromList [])])
   ], 
-  startState = 0, 
-  acceptStates = Set.fromList [11]
+  startState = 6, 
+  acceptStates = Set.fromList [12]
 }
+
 
 test_toNFA :: Test
 test_toNFA =
@@ -189,3 +190,13 @@ prop_roundTripR r = toRegExp (toNFA r) %==% r
 --     case genString' n' of
 --       Just g -> forAll g $ \s -> classify (acceptN n s) "accepting" $ acceptN n s == acceptN n' s
 --       Nothing -> property $ null (alphabet n')
+
+runTests :: IO ()
+runTests = do
+  _ <-
+    runTestTT $
+      TestList
+        [ test_toNFA,
+          test_convert
+        ]
+  quickCheck prop_roundTripR

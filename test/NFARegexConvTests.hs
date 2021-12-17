@@ -188,7 +188,7 @@ prop_testToRegExp n = let r = toRegExp n in not (RegExp.accept r "cis552")
 -- prop_testToNFA r = let r = toNFA n in not (RegExp.accept r "cis552")
 
 prop_roundTripR :: RegExp -> Property
-prop_roundTripR r = toRegExp (toNFA r) %==% r
+prop_roundTripR r = within 20000000 $ toRegExp (toNFA r) %==% r
 
 -- not necessarily equal, generate the same language
 

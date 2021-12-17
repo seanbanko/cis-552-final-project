@@ -381,15 +381,15 @@ Make sure that you also implement the 'shrink' function too.
 -}
 
 defaultCharSet :: [Set Char]
-defaultCharSet = Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c']))
+defaultCharSet = Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c', 'd']))
 
 instance Arbitrary RegExp where
   arbitrary =
     oneof
       [ fmap Char (elements defaultCharSet),
-        Monad.liftM2 Alt arbitrary arbitrary,
-        Monad.liftM2 Append arbitrary arbitrary,
-        fmap Star arbitrary,
+        Monad.liftM2 alt arbitrary arbitrary,
+        Monad.liftM2 append arbitrary arbitrary,
+        fmap star arbitrary,
         return Empty,
         return Void
       ]

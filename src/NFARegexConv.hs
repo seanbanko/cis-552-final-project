@@ -2,6 +2,7 @@ module NFARegexConv where
 
 import FA
 import NFADFAConv
+import DFAMinimization
 import NFAOperations
 import RegExp
 
@@ -130,5 +131,5 @@ toDFAInt d@(F qs sigma delta q0 fs) =
         fmapDFA (mp !) d
 
 toRegExp :: Ord a => NFA a -> RegExp
-toRegExp = convert . toGNFA . toDFAInt . toDFA 
+toRegExp = convert . toGNFA . toDFAInt . minimizeDFA . toDFA 
 

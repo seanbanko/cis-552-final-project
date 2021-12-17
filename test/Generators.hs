@@ -8,13 +8,13 @@ import FA
 import NFADFAConv
 import Test.QuickCheck
 
-genStates :: forall a. (Ord a, Arbitrary a) => Gen (Set a)
-genStates = Set.fromList <$> f (arbitrary :: Gen a)
-
-f :: Gen a -> Gen [a]
-f gen = sized $ \_ -> do
+listOf10 :: Gen a -> Gen [a]
+listOf10 gen = sized $ \_ -> do
   k <- choose (1, 10)
   vectorOf k gen
+
+genStates :: forall a. (Ord a, Arbitrary a) => Gen (Set a)
+genStates = Set.fromList <$> listOf10 (arbitrary :: Gen a)
 
 genAlphabet :: Gen (Set Char)
 genAlphabet = elements (Set.toList (Set.delete Set.empty (Set.powerSet (Set.fromList ['a', 'b', 'c', 'd']))))

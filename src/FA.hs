@@ -162,10 +162,14 @@ intersectionDFA dfa1 dfa2 =
     newStateTransition dfa1 dfa2 (s1, s2) char = (transitionD dfa1 s1 char, transitionD dfa2 s2 char)
 
 -- Given a DFA d, it returns true iff L(d) = empty set
-isVoid :: Ord a => DFA a -> Bool
-isVoid dfa = Set.disjoint (findReachableStatesD dfa) (acceptStates dfa)
+isVoidDFA :: Ord a => DFA a -> Bool
+isVoidDFA d = Set.disjoint (findReachableStatesD d) (acceptStates d)
+
+-- Given a NFA n, it returns true iff L(n) = empty set
+isVoidNFA :: Ord a => NFA a -> Bool
+isVoidNFA n = Set.disjoint (findReachableStatesN n) (acceptStates n)
 
 --Given a DFA d1 and a DFA d2, it returns true iff L(d1) == L(d2)
 equivalentDFA :: (Ord a, Ord b) => DFA a -> DFA b -> Bool
 equivalentDFA dfa1 dfa2 =
-  isVoid (intersectionDFA dfa1 (notDFA dfa2)) && isVoid (intersectionDFA (notDFA dfa1) dfa2)
+  isVoidDFA (intersectionDFA dfa1 (notDFA dfa2)) && isVoidDFA (intersectionDFA (notDFA dfa1) dfa2)

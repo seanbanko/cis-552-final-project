@@ -8,17 +8,11 @@ import FA
 import NFADFAConv
 import Test.QuickCheck
 
-{-
-Thoughts on how to generate an arbitrary NFA:
-- first generate a set of states
-- from that set of states, generate a random set of transitions between the states
--}
-
 genStates :: forall a. (Ord a, Arbitrary a) => Gen (Set a)
 genStates = Set.fromList <$> listOf1 (arbitrary :: Gen a)
 
 genAlphabet :: Gen (Set Char)
-genAlphabet = elements (Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c'])))
+genAlphabet = elements (Set.toList (Set.powerSet (Set.fromList ['a', 'b', 'c', 'd'])))
 
 genSubset :: Set a -> Gen (Set a)
 genSubset set = elements (Set.toList (Set.powerSet set))
@@ -83,11 +77,6 @@ instance (Arbitrary a, Ord a) => Arbitrary (DFA a) where
           f :: Set a -> [Map Char a] -> Map a (Map Char a)
           f states maps = Map.fromList (zip (Set.toList states) maps)
 
-{-
--- Generator for strings accepted by this NFA (if any)
-genNFAString :: NFA -> Maybe (Gen String)
--}
-
 -- Returns true iff the NFA nfa satisfies all validity properties
 prop_ValidNFA :: Ord a => NFA a -> Bool
 prop_ValidNFA nfa =
@@ -126,3 +115,8 @@ quickCheckN n = quickCheck . withMaxSuccess n
 
 genString :: FA a s -> Gen String
 genString fa = listOf (elements (Set.toList (alphabet fa)))
+
+-- genString' :: FA a s -> Maybe (Gen String)
+-- genString' fa 
+--   | null (alphabet fa) = Nothing
+--   | otherwise = Just $ listOf (elements (Set.toList (alphabet fa)))

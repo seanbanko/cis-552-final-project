@@ -23,6 +23,7 @@ simplifyChar :: RegExp -> RegExp
 simplifyChar (RegExp.Char cs) = foldr (alt . char) RegExp.Void cs
 simplifyChar r = r
 
+-- Converts a regular expression to an equivalent NFA
 toNFA :: RegExp -> NFA Int
 toNFA r@(RegExp.Char cset)
     | Set.size cset > 1 = toNFA (simplifyChar r) 
@@ -96,12 +97,12 @@ generalizeTransitionMapDFA d q0 qf =
 
 -- Creates a transition map for the Generalized NFA of an NFA, given the new start state and final state
 generalizeTransitionMapNFA :: Ord a => NFA a -> a -> a -> Map a (Map a RegExp) 
-generalizeTransitionMapNFA d q0 qf = 
-    let tm    = invertNFA (transitionMap d)
-        q0Map = Map.singleton (startState d) RegExp.Empty
+generalizeTransitionMapNFA n q0 qf = 
+    let tm    = invertNFA (transitionMap n)
+        q0Map = Map.singleton (startState n) RegExp.Empty
         tm'   = Map.insert q0 q0Map tm
-        tm''  = addEpsilonTransitionsGNFA (acceptStates d) qf tm'
-        tm''' = makeTotalTransitionMapGNFA (Set.unions [states d, Set.singleton q0, Set.singleton qf]) q0 qf tm''
+        tm''  = addEpsilonTransitionsGNFA (acceptStates n) qf tm'
+        tm''' = makeTotalTransitionMapGNFA (Set.unions [states n, Set.singleton q0, Set.singleton qf]) q0 qf tm''
      in tm'''
 
 -- Converts a DFA to a Generalized NFA

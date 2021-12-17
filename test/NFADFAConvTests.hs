@@ -12,7 +12,6 @@ import NFADFAConv
 import Test.HUnit
 import Test.QuickCheck
 
-
 d1 :: DFA (Set Int)
 d1 = toDFA n1
 
@@ -65,3 +64,12 @@ prop_equivalent nfa = forAll (genString nfa) $
 
 prop_isDFA :: Ord a => NFA a -> Bool
 prop_isDFA n = prop_ValidDFA (toDFA n)
+
+runTests :: IO ()
+runTests = do
+  _ <-
+    runTestTT $
+      TestList
+        [test_toDFA]
+  quickCheck (prop_equivalent :: NFA Int -> Property)
+  quickCheck (prop_isDFA :: NFA Int -> Bool)
